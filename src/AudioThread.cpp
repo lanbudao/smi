@@ -235,7 +235,7 @@ void AudioThread::run()
             resample->setWantedSamples(wanted_samples);
             if (resample->speed() != clock->speed()) {
                 resample->setSpeed(clock->speed());
-                resample->prepare();
+                //resample->prepare();
             }
             frame.setAudioResampler(resample);
             frame = frame.to(ao->audioFormat());

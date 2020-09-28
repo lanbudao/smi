@@ -89,7 +89,7 @@ bool AudioResampleFFmpeg::prepare()
     d->context = swr_alloc_set_opts(d->context,
         d->out_format.channelLayoutFFmpeg(),
         (AVSampleFormat)d->out_format.sampleFormatFFmpeg(),
-        d->out_format.sampleRate() / d->speed,
+        d->out_format.sampleRate()/* / d->speed*/,
         d->in_format.channelLayoutFFmpeg(),
         (AVSampleFormat)d->in_format.sampleFormatFFmpeg(),
         d->in_format.sampleRate(),
@@ -141,8 +141,13 @@ bool AudioResampleFFmpeg::convert(const uchar **data)
     d->data.reset();
     int64_t out_count = 0;
     int out_size = 0;
-    if (d->wanted_nb_samples != d->in_samples_per_channel) {
-        out_count = (int64_t)d->wanted_nb_samples * out_sample_rate / in_sample_rate + 256;
+    /**
+     * I think it's better to changed wanted_nb_samples when speed changed, 
+     * rather than to change sample-rate
+     */
+    int wanted_nb_samples = d->wanted_nb_samples / d->speed;
+    if (wanted_nb_samples != d->in_samples_per_channel) {
+        out_count = (int64_t)wanted_nb_samples * out_sample_rate / in_sample_rate + 256;
         out_size = av_samples_get_buffer_size(NULL,
             d->out_format.channels(),
             out_count,
@@ -153,8 +158,8 @@ bool AudioResampleFFmpeg::convert(const uchar **data)
             return false;
         }
         if (swr_set_compensation(d->context, 
-            (d->wanted_nb_samples - d->in_samples_per_channel) * out_sample_rate / in_sample_rate,
-            d->wanted_nb_samples * out_sample_rate / in_sample_rate) < 0) {
+            (wanted_nb_samples - d->in_samples_per_channel) * out_sample_rate / in_sample_rate,
+            wanted_nb_samples * out_sample_rate / in_sample_rate) < 0) {
             AVDebug("swr_set_compensation() failed\n");
             return false;
         }
