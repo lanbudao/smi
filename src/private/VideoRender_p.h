@@ -4,6 +4,7 @@
 #include "VideoRenderer.h"
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
+#include <cmath>
 
 NAMESPACE_BEGIN
 class VideoRendererPrivate: public AVOutputPrivate

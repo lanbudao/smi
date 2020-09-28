@@ -2,8 +2,8 @@
 #define INNERMATH_H
 
 #include <algorithm>
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <corecrt_math_defines.h>
+#include <cmath>
 
 static inline bool FuzzyCompare(double p1, double p2)
 {

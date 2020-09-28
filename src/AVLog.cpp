@@ -387,9 +387,9 @@ public:
         if (fp_)
             fclose(fp_);
 
-        std::string file(fileName_ + '.' + date_);
+        std::string file(fileName_ + '-' + date_);
         if (fileCount_)
-            file += '.' + std::to_string(fileCount_) + ".log";
+            file += '(' + std::to_string(fileCount_) + ").log";
         else
             file += ".log";
 
@@ -459,7 +459,7 @@ private:
     std::string date_;
     FILE *fp_;
     static const uint32_t kBytesPerMb = 1 << 20;
-    static constexpr const char *kDefaultLogFile = "limlog";
+    static constexpr const char *kDefaultLogFile = "ffpro";
 
     size_t write(const char *data, size_t len) {
         size_t n = fwrite(data, 1, len, fp_);

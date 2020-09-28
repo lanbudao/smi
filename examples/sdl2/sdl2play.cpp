@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <iostream>
 #include "sdk/player.h"
-#include "VideoRenderer.h"
 #include "sdk/AVLog.h"
 #include "SDL.h"
 
@@ -12,7 +11,7 @@ const Uint32 update_event = SDL_USEREVENT + 10;
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        AVDebug("Use 'Puff.exe file-name'\n");
+        AVDebug("Use 'sdl2play.exe file-name'\n");
         system("pause");
         return 0;
     }
@@ -31,7 +30,7 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
 	SDL_GL_SwapWindow(window);
 
-    FFPRO::setLogFile("E:/log.txt");
+    //FFPRO::setLogFile("E:/log.txt");
     char* fileName = argv[1];
     AVDebug("The name of file to play: %s\n", fileName);
 
