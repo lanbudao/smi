@@ -11,6 +11,7 @@ set(MODULE ffproc)
 list(APPEND INCLUDE_DIR .
         sdk
         3dparty/glad/include
+        3dparty/SoundTouch
         decoder
         output
         private
@@ -66,6 +67,7 @@ if (EXISTS ${PORTAUDIO_DIR})
 #    link_directories(${PORTAUDIO_DIR}/lib)
 #    list(APPEND EXTRA_LIBS portaudio)
     find_library(LIB_PORTAUDIO portaudio ${PORTAUDIO_DIR}/lib)
+    list(APPEND EXTRA_LIBS ${LIB_PORTAUDIO})
     list(APPEND EXTRA_DEFS -DFFPROC_HAVE_PORTAUDIO=1)
     list(APPEND SOURCES output/audio/AudioOutputPortAudio.cpp)
 endif()
@@ -95,7 +97,9 @@ aux_source_directory(decoder/audio SOURCES)
 aux_source_directory(decoder/video SOURCES)
 aux_source_directory(decoder/subtitle SOURCES)
 aux_source_directory(3dparty/glad/src SOURCES)
+aux_source_directory(3dparty/SoundTouch SOURCES)
 aux_source_directory(renderer SOURCES)
+aux_source_directory(resample SOURCES)
 
 list(APPEND HEADERS ${SDK_HEADERS}
     ${SDK_PRIVATE_HEADERS}
@@ -121,7 +125,7 @@ target_compile_definitions(${MODULE} PUBLIC ${EXTRA_DEFS})
 #find_library(LIB_AVDEVICE avdevice ${FFMPEG_LIB})
 #find_library(LIB_SWRESAMPLE swresample ${FFMPEG_LIB})
 
-target_link_libraries(${MODULE} ${EXTRA_LIBS} ${LIB_PORTAUDIO})
+target_link_libraries(${MODULE} ${EXTRA_LIBS})
 #target_link_libraries(${MODULE} ${LIB_AVFORMAT} ${LIB_AVCODEC} ${LIB_AVUTIL}
 #                                ${LIB_AVSCALE} ${LIB_AVFILTER} ${LIB_AVDEVICE}
 #                                ${LIB_SWRESAMPLE})

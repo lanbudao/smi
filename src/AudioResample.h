@@ -10,7 +10,7 @@ NAMESPACE_BEGIN
 
 class AudioFormat;
 class AudioResamplePrivate;
-class FFPRO_EXPORT AudioResample
+class AudioResample
 {
     FACTORY_INTERFACE(AudioResample)
     DPTR_DECLARE_PRIVATE(AudioResample)
@@ -37,7 +37,8 @@ protected:
     DPTR_DECLARE(AudioResample)
 };
 
-extern FFPRO_EXPORT AudioResampleId AudioResampleId_FFmpeg;
+extern AudioResampleId AudioResampleId_FFmpeg;
+extern AudioResampleId AudioResampleId_SoundTouch;
 
 NAMESPACE_END
 #endif //AUDIO_RESAMPLE_H

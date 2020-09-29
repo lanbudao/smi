@@ -12,6 +12,7 @@ public:
         in_samples_per_channel(0),
         out_samples_per_channel(0),
         wanted_nb_samples(0),
+        pitch(1.0),
         speed(1.0)
     {
         in_format.setSampleFormat(AudioFormat::SampleFormat_Unknown);
@@ -26,6 +27,7 @@ public:
     int wanted_nb_samples;
 
     ByteArray data;
+    float pitch;
     float speed;
 };
 

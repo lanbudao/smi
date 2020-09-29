@@ -235,11 +235,13 @@ void AudioThread::run()
             resample->setWantedSamples(wanted_samples);
             if (resample->speed() != clock->speed()) {
                 resample->setSpeed(clock->speed());
-                //resample->prepare();
+//                resample->prepare();
             }
             frame.setAudioResampler(resample);
             frame = frame.to(ao->audioFormat());
         }
+        if (!frame.isValid())
+            continue;
         //Write data to audio device
         const ByteArray &decoded = frame.data();
         int decodedSize = decoded.size();
