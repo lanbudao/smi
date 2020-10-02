@@ -13,7 +13,8 @@ class CThreadPrivate
 {
 public:
     CThreadPrivate():
-        isRunning(false)
+        isRunning(false),
+        title("")
     {
     }
     ~CThreadPrivate() {
@@ -22,12 +23,13 @@ public:
 
 	std::thread t;
     std::atomic<bool> isRunning;
+    const char* title;
 };
 
-CThread::CThread():
+CThread::CThread(const char* title):
     d_ptr(new CThreadPrivate)
 {
-
+    d_func()->title = title;
 }
 
 CThread::~CThread()
@@ -49,7 +51,7 @@ void CThread::stop() {
     if (!isRunning())
         return;
     stoped();
-	AVDebug("Thread %d finished!\n", id());
+    AVDebug("stopping thread %s\n", d->title);
     d->isRunning = false;
 }
 
@@ -63,7 +65,7 @@ void CThread::wait()
 void CThread::run()
 {
 	DPTR_D(CThread);
-	AVDebug("Thread %d finished!\n", id());
+	AVDebug("Thread %s finished!\n", d->title);
 	d->isRunning = false;
 }
 

@@ -166,6 +166,12 @@ enum ClockType
     SyncToNone = 3 //unused
 };
 
+enum ResampleType: uint8_t
+{
+    ResampleBase,
+    ResampleSoundtouch
+};
+
 typedef struct Color {
     uint8_t r, g, b, a;
     Color(uint8_t _r = 0, uint8_t _g = 0, uint8_t _b = 0, uint8_t _a = 255) {

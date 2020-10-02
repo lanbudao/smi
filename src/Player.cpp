@@ -179,6 +179,12 @@ void Player::setClockType(ClockType type)
     d->clock_type = type;
 }
 
+void Player::setResampleType(ResampleType t)
+{
+    DPTR_D(Player);
+    d->resample_type = t;
+}
+
 void Player::renderVideo()
 {
     DPTR_D(Player);
@@ -279,10 +285,6 @@ std::list<Subtitle *> Player::externalSubtitles()
 {
     DPTR_D(Player);
     return d->external_subtitles;
-}
-
-void Player::onPositionChanged(int pts)
-{
 }
 
 void Player::setBufferProcessCallback(std::function<void(float p)> f)

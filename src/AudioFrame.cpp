@@ -147,7 +147,7 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
     resample->setOutFormat(fmt);
     resample->setInSamplesPerChannel(samplePerChannel());
     if (!(resample->convert((const uchar **)d->planes.data()))) {
-        AVError("Audio frame convert failed!\n");
+//        AVError("Audio frame convert failed!\n");
         return AudioFrame();
     }
     AudioFrame frame(fmt, resample->outData());

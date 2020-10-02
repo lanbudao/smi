@@ -4,8 +4,8 @@
 
 NAMESPACE_BEGIN
 
-AVThread::AVThread(AVThreadPrivate *d):
-    CThread(),
+AVThread::AVThread(const char* title, AVThreadPrivate *d):
+    CThread(title),
     d_ptr(d)
 {
 

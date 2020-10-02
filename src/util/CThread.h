@@ -11,7 +11,7 @@ class FFPRO_EXPORT CThread
 {
     DPTR_DECLARE_PRIVATE(CThread)
 public:
-    CThread();
+    CThread(const char* title = "");
     virtual ~CThread();
 
     void start();

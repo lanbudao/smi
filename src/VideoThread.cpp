@@ -17,6 +17,7 @@ class VideoDecoderThread: public CThread
 {
 public:
     VideoDecoderThread():
+        CThread("video decoder"),
         abort(false),
         pkts(nullptr),
         serial(-1)
@@ -25,6 +26,7 @@ public:
     }
     void stop()
     {
+        frames.clear();
         abort = true;
     }
     void run()
@@ -66,6 +68,7 @@ public:
             frame.setSerial(serial);
             frames.enqueue(frame);
         }
+        CThread::run();
     }
 
     bool abort;
@@ -145,7 +148,7 @@ public:
 };
 
 VideoThread::VideoThread():
-    AVThread(new VideoThreadPrivate)
+    AVThread("video", new VideoThreadPrivate)
 {
 
 }

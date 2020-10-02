@@ -78,6 +78,13 @@ public:
      */
     void setClockType(ClockType type);
 
+    /**
+     * @brief default is ResampleBase
+     * @param t if is ResampleSoundtouch and speed don't equal 1.0, 
+     * it will change speed without changing tone
+     */
+    void setResampleType(ResampleType t);
+
     void renderVideo();
     void setRenderCallback(std::function<void(void* vo_opaque)> cb);
     VideoRenderer* addVideoRenderer(int w, int h);
@@ -93,12 +100,6 @@ public:
     void enableExternalSubtitle(Subtitle *sub);
     void removeExternalSubtitle(Subtitle *sub);
     std::list<Subtitle*> externalSubtitles();
-
-    /**
-      interface
-     */
-    Signal<int> posChanged;
-    void onPositionChanged(int);
 
     void setBufferProcessCallback(std::function<void(float p)> f);
     void setMediaStatusCallback(std::function<void(MediaStatus)> f);

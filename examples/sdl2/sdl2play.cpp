@@ -64,6 +64,8 @@ int main(int argc, char *argv[])
     });
     player->setBufferPara(BufferTime, 3 * 1000);
     //player->setClockType(SyncToVideo);
+    player->setResampleType(ResampleSoundtouch);
+    player->setSpeed(2.0);
     player->prepare();
 
     /*Set window icon*/

@@ -44,6 +44,8 @@ public:
 
     virtual int decode(const Packet& packet) = 0;
 
+    void setResampleType(ResampleType t);
+
 private:
     template<class T>
     static AudioDecoder * create() { return new T(); }

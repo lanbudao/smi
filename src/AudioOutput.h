@@ -24,6 +24,7 @@ public:
 
     AudioFormat setAudioFormat(const AudioFormat& format);
     AudioFormat audioFormat() const;
+    void setResampleType(ResampleType t);
 
     void setBackend(const std::vector<std::string> &names);
 

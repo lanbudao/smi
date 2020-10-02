@@ -14,7 +14,8 @@ public:
     AudioOutputPrivate():
         backend(nullptr),
         available(false),
-        buffer_samples(kBufferSamples)
+        buffer_samples(kBufferSamples),
+        resample_type(ResampleBase)
     {
 
     }
@@ -29,6 +30,7 @@ public:
     AudioOutputBackend *backend;
     bool available;
     int buffer_samples;
+    ResampleType resample_type;
 };
 
 AudioOutput::AudioOutput():
@@ -122,7 +124,7 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat &format)
     bool check_up = af.bytesPerSample() == 1;
     while (!d->backend->isSupported(af) && !d->backend->isSupported(af.sampleFormat())) {
         if (af.isPlanar()) {
-            af.setSampleFormat(ToPacked(af.sampleFormat()));
+            af.setSampleFormat(AudioFormat::SampleFormat_Signed16/*ToPacked(af.sampleFormat())*/);
             continue;
         }
         if (af.isFloat()) {
@@ -143,6 +145,9 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat &format)
             continue;
         }
     }
+    if (d->resample_type == ResampleSoundtouch) {
+        af.setSampleFormat(AudioFormat::SampleFormat_Signed16);
+    }
     d->format = af;
 //    d->updateSampleScaleFunc();
     return af;
@@ -152,6 +157,12 @@ AudioFormat AudioOutput::audioFormat() const
 {
     DPTR_D(const AudioOutput);
     return d->format;
+}
+
+void AudioOutput::setResampleType(ResampleType t)
+{
+    DPTR_D(AudioOutput);
+    d->resample_type = t;
 }
 
 void AudioOutput::setBackend(const std::vector<std::string> &names)

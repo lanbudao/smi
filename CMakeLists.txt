@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 2.8.4)
 
 project(ffproc)
+# Use C++11
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
+    message(STATUS "optional:-std=c++11")
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 include(3rdparty.cmake)
 # Set Version

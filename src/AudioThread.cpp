@@ -23,6 +23,7 @@ class AudioDecoderThread: public CThread
 {
 public:
     AudioDecoderThread():
+        CThread("audio decoder"),
         stopped(false),
         pkts(nullptr),
         serial(-1)
@@ -75,6 +76,7 @@ public:
             frame.setSerial(serial);
             frames.enqueue(frame);
         }
+        CThread::run();
     }
 
     bool stopped;
@@ -184,7 +186,7 @@ int AudioThreadPrivate::getWantedSamples(int samples, int freq)
 }
 
 AudioThread::AudioThread():
-    AVThread(new AudioThreadPrivate)
+    AVThread("audio", new AudioThreadPrivate)
 {
 
 }
@@ -204,6 +206,7 @@ void AudioThread::run()
     d->stopped = false;
     bool pkt_valid = false;
     AudioResample* resample = dec->audioResample();
+    int decodedSize = 0, decodedPos = 0;
 
     d->setResampleParas(ao);
     d->decode_thread->pkts = &d->packets;
@@ -224,11 +227,6 @@ void AudioThread::run()
 		if (frame.serial() != d->packets.serial()) {
 			continue;
 		}
-		//AVDebug("1 update audio pts: %.3f, %d, %d, %d\n", 
-		//	clock->value(), 
-		//	frame.serial(),
-		//	d->packets.serial(),
-		//	clock->clock(SyncToAudio)->serial);
         bool has_ao = ao && ao->isAvaliable();
         if (has_ao) {
             int wanted_samples = d->getWantedSamples(frame.samplePerChannel(), frame.format().sampleRate());
@@ -244,18 +242,12 @@ void AudioThread::run()
             continue;
         //Write data to audio device
         const ByteArray &decoded = frame.data();
-        int decodedSize = decoded.size();
-        int decodedPos = 0;
-        double delay = 0;
+        decodedSize = decoded.size();
+        decodedPos = 0;
         const double byte_rate = frame.format().bytesPerSecond();
         double pts = frame.timestamp();
         clock->updateValue(SyncToAudio, pts, frame.serial());
         //AVDebug("audio frame pts: %.3f\n", frame.timestamp());
-		//AVDebug("2 update audio pts: %.3f, %d, %d, %d\n",
-		//	clock->value(),
-		//	frame.serial(),
-		//	d->packets.serial(),
-		//	clock->clock(SyncToAudio)->serial);
         while (decodedSize > 0) {
             if (d->stopped) {
                 AVDebug("audio thread stopped after decode\n");
@@ -309,6 +301,7 @@ void AudioThread::run()
 		//int a = 0;
     }
     d->packets.clear();
+    CThread::run();
 }
 
 NAMESPACE_END

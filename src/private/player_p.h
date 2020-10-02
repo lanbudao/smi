@@ -22,24 +22,23 @@ NAMESPACE_BEGIN
 class PlayerPrivate
 {
 public:
-    PlayerPrivate():
+    PlayerPrivate() :
         loaded(false),
         paused(false),
         seeking(false),
-		buffer_mode(BufferPackets),
-		buffer_value(-1),
+        buffer_mode(BufferPackets),
+        buffer_value(-1),
         demuxer(nullptr),
         demux_thread(nullptr),
         video_thread(nullptr),
         audio_thread(nullptr),
-//        video_track(0),     /*default use the first video track*/
-//        audio_track(0),     /*default use the first audio track*/
-//        sub_track(-1),      /*default do not use subtitle*/
         video_dec(nullptr),
         audio_dec(nullptr),
-        ao(new AudioOutput),
+        ao(nullptr),
+        resample_type(ResampleBase),
         clock_type(SyncToAudio)
     {
+        ao = new AudioOutput;
         demuxer = new Demuxer();
         demuxer->setMediaInfo(&mediainfo);
         demux_thread = new AVDemuxThread();
@@ -67,6 +66,11 @@ public:
         if (demuxer) {
             delete demuxer;
             demuxer = nullptr;
+        }
+        if (demux_thread) {
+            demux_thread->stop();
+            delete demux_thread;
+            demux_thread = nullptr;
         }
 //        audio_output_set.clearOutput();
         video_output_set.clearOutput();
@@ -113,6 +117,7 @@ public:
 
     AVClock clock;
     ClockType clock_type;
+    ResampleType resample_type;
 
     /*Subtitles*/
     Subtitle internal_subtitle;
@@ -208,6 +213,7 @@ bool PlayerPrivate::setupAudioThread()
 	}
 
 	ao->setAudioFormat(af);
+    ao->setResampleType(resample_type);
 	ao->close();
 	if (!ao->open()) {
 		return false;
@@ -220,7 +226,8 @@ bool PlayerPrivate::setupAudioThread()
 		audio_thread->setClock(&clock);
         clock.init(SyncToAudio, audio_thread->packets()->serialAddr());
 		demux_thread->setAudioThread(audio_thread);
-	}
+	}    
+    audio_dec->setResampleType(resample_type);
 	audio_thread->setDecoder(audio_dec);
 	updateBufferValue(audio_thread->packets());
 	return true;

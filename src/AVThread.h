@@ -37,7 +37,7 @@ public:
     void waitAndCheck(int ms);
 
 protected:
-    AVThread(AVThreadPrivate *d);
+    AVThread(const char* title, AVThreadPrivate *d);
     DPTR_DECLARE(AVThread)
 };
 

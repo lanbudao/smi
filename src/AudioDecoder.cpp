@@ -6,15 +6,6 @@ NAMESPACE_BEGIN
 
 FACTORY_DEFINE(AudioDecoder)
 
-//static void AudioDecoder_RegisterAll()
-//{
-//    ONLY_RUN_ONES;
-//    if (AudioDecoder::name(AudioDecoderId_FFmpeg)) {
-//        return;
-//    }
-//    extern bool RegisterAudioDecoderFFmpeg_Man();
-//    RegisterAudioDecoderFFmpeg_Man();
-//}
 
 AudioDecoder::AudioDecoder(AudioDecoderPrivate *d):
     AVDecoder(d)
@@ -60,6 +51,24 @@ AudioResample *AudioDecoder::audioResample() const
 {
     DPTR_D(const AudioDecoder);
     return d->resample;
+}
+
+void AudioDecoder::setResampleType(ResampleType t)
+{
+    DPTR_D(AudioDecoder);
+    d->resample_type = t;
+    if (t == ResampleBase) {
+        d->resample = AudioResample::create(AudioResampleId_FFmpeg);
+        if (d->resample) {
+            d->resample->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
+        }
+    }
+    else {
+        d->resample = AudioResample::create(AudioResampleId_SoundTouch);
+        if (d->resample) {
+            d->resample->setOutSampleFormat(AV_SAMPLE_FMT_S16);
+        }
+    }
 }
 
 NAMESPACE_END

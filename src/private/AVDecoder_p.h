@@ -176,12 +176,10 @@ class AudioDecoderPrivate: public AVDecoderPrivate
 {
 public:
     AudioDecoderPrivate():
-        resample(nullptr)
+        resample(nullptr),
+        resample_type(ResampleBase)
     {
-        resample = AudioResample::create(AudioResampleId_FFmpeg);
-        if (resample) {
-            resample->setOutSampleFormat(AV_SAMPLE_FMT_FLT);
-        }
+
     }
     virtual ~AudioDecoderPrivate()
     {
@@ -192,6 +190,7 @@ public:
     }
 
     AudioResample *resample;
+    ResampleType resample_type;
 };
 
 class SubtitleDecoderPrivate: public AVDecoderPrivate
