@@ -15,7 +15,6 @@ public:
     AVOutputPrivate():
         avaliable(true),
         pause(false),
-//        statistics(nullptr)
         media_info(nullptr)
     {
 

@@ -8,17 +8,6 @@ FACTORY_DEFINE(AudioResample)
 
 AudioResampleId AudioResampleId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 AudioResampleId AudioResampleId_SoundTouch = mkid::id32base36_6<'S', 'o', 'u', 'n', 'd', 'T'>::value;
-void AudioResample_RegisterAll()
-{
-    ONLY_RUN_ONES;
-    if (!AudioResampleFactory::instance().registeredIds().empty()) {
-        return;
-    }
-    extern bool RegisterAudioResampleFFmpeg_Man();
-    RegisterAudioResampleFFmpeg_Man();
-    extern bool RegisterAudioResampleSoundTouch_Man();
-    RegisterAudioResampleSoundTouch_Man();
-}
 
 AudioResample::AudioResample(AudioResamplePrivate *d):
     d_ptr(d)
@@ -61,8 +50,6 @@ void AudioResample::setOutFormat(const AudioFormat &fmt)
     if (d->out_format == fmt)
         return;
     d->out_format = fmt;
-    //Test
-    //d->out_format.setSampleRate(d->out_format.sampleRate() * 0.5);
     prepare();
 }
 
