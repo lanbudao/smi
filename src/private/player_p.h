@@ -212,8 +212,8 @@ bool PlayerPrivate::setupAudioThread()
 		return false;
 	}
 
-	ao->setAudioFormat(af);
     ao->setResampleType(resample_type);
+	ao->setAudioFormat(af);
 	ao->close();
 	if (!ao->open()) {
 		return false;

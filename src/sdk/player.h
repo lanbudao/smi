@@ -41,10 +41,17 @@ public:
     bool isPaused() const;
     void stop();
     /**
-     * @brief set speed to play, The effective range is 0.5~2
+     * @brief set speed to play, the effective range is 0.5~2
      */
     void setSpeed(float speed);
     float speed() const;
+    bool isMute() const;
+    void setMute(bool m);
+    /**
+     * @brief set volume to play, the effective range is 0.0~1.0(default)
+     */
+    void setVolume(float volume);
+    float volume() const;
 
     bool isPlaying();
     void seek(double t, SeekType type = SeekDefault);

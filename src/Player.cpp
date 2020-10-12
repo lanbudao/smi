@@ -97,6 +97,26 @@ float Player::speed() const
     return d->clock.speed();
 }
 
+bool Player::isMute() const
+{
+    return d_func()->ao->isMute();
+}
+
+void Player::setMute(bool m)
+{
+    d_func()->ao->setMute(m);
+}
+
+void Player::setVolume(float volume)
+{
+    d_func()->ao->setVolume(volume);
+}
+
+float Player::volume() const
+{
+    return d_func()->ao->volume();
+}
+
 bool Player::isPlaying()
 {
     DPTR_D(Player);

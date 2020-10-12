@@ -22,6 +22,7 @@ public:
     const char *constData() const;
     size_t size() const;
     void reset();
+    void fill(char ch, int size = 0);
 
     void resize(size_t size);
 

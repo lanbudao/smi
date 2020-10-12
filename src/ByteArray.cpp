@@ -85,6 +85,14 @@ void ByteArray::reset()
         av_fifo_reset(d->data);
 }
 
+void ByteArray::fill(char ch, int size)
+{
+    DPTR_D(ByteArray);
+    resize(size < 0 ? d->size : size);
+    if (d->size)
+        memset(d->data->buffer, ch, d->size);
+}
+
 void ByteArray::resize(size_t size)
 {
     DPTR_D(ByteArray);

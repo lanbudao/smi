@@ -33,6 +33,14 @@ public:
     int bufferSamples() const;
     void setBufferSamples(int value);
 
+    float volume() const;
+    void setVolume(float v);
+
+    bool isMute() const;
+    void setMute(bool m);
+
+    bool receiveData(const char* data, int size, double pts);
+
 private:
 
 };

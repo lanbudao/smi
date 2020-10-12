@@ -24,6 +24,7 @@ public:
     virtual bool close() = 0;
     virtual bool clear() {return false;}
     virtual bool write(const char *data, int size) = 0;
+    virtual bool play() { return true; }
 
     bool avaliable() const;
     void setAvaliable(bool b);

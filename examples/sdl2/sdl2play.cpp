@@ -96,6 +96,12 @@ int main(int argc, char *argv[])
                 player->setSpeed(player->speed() - 0.1);
             } else if (event.key.keysym.sym == SDLK_UP) {
                 player->setSpeed(player->speed() + 0.1);
+            } else if (event.key.keysym.sym == SDLK_F1) {
+                player->setMute(!player->isMute());
+            } else if (event.key.keysym.sym == SDLK_F2) {
+                player->setVolume(player->volume() - 0.1);
+            } else if (event.key.keysym.sym == SDLK_F3) {
+                player->setVolume(player->volume() + 0.1);
             }
         }
         else if (event.type == SDL_MOUSEBUTTONDOWN) {
