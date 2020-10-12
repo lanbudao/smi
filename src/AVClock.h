@@ -3,7 +3,6 @@
 
 #include "sdk/global.h"
 #include "sdk/DPTR.h"
-#include "SignalSlot.h"
 
 NAMESPACE_BEGIN
 
@@ -54,8 +53,6 @@ public:
 
     ClockType type() const;
     void setClockType(ClockType type);
-
-    Signal<int> posChanged;
 
     void setMaxDuration(double d);
     double maxDuration() const;

@@ -8,7 +8,7 @@
 NAMESPACE_BEGIN
 
 class AVOutputPrivate;
-class FFPRO_EXPORT AVOutput
+class AVOutput
 {
     friend class AVPlayer;
     DPTR_DECLARE_PRIVATE(AVOutput)

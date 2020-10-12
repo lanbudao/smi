@@ -3,7 +3,6 @@
 
 #include "global.h"
 #include "DPTR.h"
-#include "SignalSlot.h"
 #include "mediainfo.h"
 
 /**
@@ -112,8 +111,7 @@ public:
     void setMediaStatusCallback(std::function<void(MediaStatus)> f);
 
 private:
-
-    DPTR_DECLARE(Player)
+    class FFPRO_EXPORT DPTR_DECLARE(Player)
 };
 
 NAMESPACE_END

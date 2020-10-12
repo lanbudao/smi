@@ -6,7 +6,7 @@
 NAMESPACE_BEGIN
 
 class AudioThreadPrivate;
-class FFPRO_EXPORT AudioThread: public AVThread
+class AudioThread: public AVThread
 {
     DPTR_DECLARE_PRIVATE(AudioThread)
 public:

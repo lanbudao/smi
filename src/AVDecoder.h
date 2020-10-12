@@ -12,7 +12,7 @@ typedef struct AVStream AVStream;
 NAMESPACE_BEGIN
 
 class AVDecoderPrivate;
-class FFPRO_EXPORT AVDecoder
+class AVDecoder
 {
     DPTR_DECLARE_PRIVATE(AVDecoder)
 public:

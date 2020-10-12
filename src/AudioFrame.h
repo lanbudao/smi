@@ -8,7 +8,7 @@ NAMESPACE_BEGIN
 
 class AudioResample;
 class AudioFramePrivate;
-class FFPRO_EXPORT AudioFrame: public Frame
+class AudioFrame: public Frame
 {
     DPTR_DECLARE_PRIVATE(AudioFrame)
 public:

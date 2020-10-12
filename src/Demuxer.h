@@ -15,7 +15,7 @@ NAMESPACE_BEGIN
 
 struct AVCodecContext;
 class DemuxerPrivate;
-class FFPRO_EXPORT Demuxer
+class Demuxer
 {
     DPTR_DECLARE_PRIVATE(Demuxer)
 public:

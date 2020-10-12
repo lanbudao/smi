@@ -33,7 +33,7 @@ struct SubtitleFrame {
 };
 
 class SubtitlePrivate;
-class FFPRO_EXPORT Subtitle
+class Subtitle
 {
     DPTR_DECLARE_PRIVATE(Subtitle)
 public:

@@ -8,7 +8,7 @@
 NAMESPACE_BEGIN
 
 class VideoRendererPrivate;
-class FFPRO_EXPORT VideoRenderer: public AVOutput
+class VideoRenderer: public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:

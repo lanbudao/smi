@@ -8,7 +8,7 @@ NAMESPACE_BEGIN
 
 class Player;
 class FilterPrivate;
-class FFPRO_EXPORT Filter
+class Filter
 {
     DPTR_DECLARE_PRIVATE(Filter)
 public:

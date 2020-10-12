@@ -2,7 +2,6 @@
 #define AVDEMUXTHREAD_H
 
 #include "CThread.h"
-#include "SignalSlot.h"
 
 NAMESPACE_BEGIN
 

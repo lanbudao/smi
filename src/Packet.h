@@ -10,7 +10,7 @@ struct AVPacket;
 NAMESPACE_BEGIN
 
 class PacketPrivate;
-class FFPRO_EXPORT Packet
+class Packet
 {
     DPTR_DECLARE_PRIVATE(Packet)
 public:

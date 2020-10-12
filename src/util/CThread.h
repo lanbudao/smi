@@ -7,7 +7,7 @@
 NAMESPACE_BEGIN
 
 class CThreadPrivate;
-class FFPRO_EXPORT CThread
+class CThread
 {
     DPTR_DECLARE_PRIVATE(CThread)
 public:

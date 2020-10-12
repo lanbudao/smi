@@ -9,7 +9,7 @@ NAMESPACE_BEGIN
 
 typedef int AudioDecoderId;
 class AudioDecoderPrivate;
-class FFPRO_EXPORT AudioDecoder: public AVDecoder
+class AudioDecoder: public AVDecoder
 {
     DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:

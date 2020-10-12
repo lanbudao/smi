@@ -11,7 +11,7 @@
 NAMESPACE_BEGIN
 
 class VideoFormatPrivate;
-class FFPRO_EXPORT VideoFormat
+class VideoFormat
 {
 //    DPTR_DECLARE_PRIVATE(VideoFormat)
 public:

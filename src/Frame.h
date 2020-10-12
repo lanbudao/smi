@@ -12,7 +12,7 @@ typedef struct AVFrame AVFrame;
 NAMESPACE_BEGIN
 
 class FramePrivate;
-class FFPRO_EXPORT Frame
+class Frame
 {
     DPTR_DECLARE_PRIVATE(Frame)
 public:

@@ -11,7 +11,7 @@ NAMESPACE_BEGIN
 typedef int VideoDecoderId;
 
 class VideoDecoderPrivate;
-class FFPRO_EXPORT VideoDecoder: public AVDecoder
+class VideoDecoder: public AVDecoder
 {
     DISABLE_COPY(VideoDecoder)
     DPTR_DECLARE_PRIVATE(VideoDecoder)

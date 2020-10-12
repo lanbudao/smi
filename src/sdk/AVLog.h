@@ -75,7 +75,7 @@ public:
     void setContext(MessageLogContext &ctx);
 
 private:
-    DPTR_DECLARE(Debug)
+    class FFPRO_EXPORT DPTR_DECLARE(Debug)
 };
 
 class FFPRO_EXPORT MessageLogger
@@ -98,7 +98,7 @@ public:
     Debug fatal() const;
 
 private:
-    MessageLogContext context;
+    class FFPRO_EXPORT MessageLogContext context;
 
 };
 

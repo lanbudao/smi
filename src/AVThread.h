@@ -10,7 +10,7 @@ class OutputSet;
 class PacketQueue;
 class AVDecoder;
 class AVThreadPrivate;
-class FFPRO_EXPORT AVThread: public CThread
+class AVThread: public CThread
 {
     DPTR_DECLARE_PRIVATE(AVThread)
 public:

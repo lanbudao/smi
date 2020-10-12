@@ -8,7 +8,7 @@
 NAMESPACE_BEGIN
 
 class ByteArrayPrivate;
-class FFPRO_EXPORT ByteArray
+class ByteArray
 {
     DPTR_DECLARE_PRIVATE(ByteArray)
 public:

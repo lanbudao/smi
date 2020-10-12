@@ -9,7 +9,7 @@ NAMESPACE_BEGIN
 
 class AVOutput;
 class OutputSetPrivate;
-class FFPRO_EXPORT OutputSet
+class OutputSet
 {
     DPTR_DECLARE_PRIVATE(OutputSet)
 public:

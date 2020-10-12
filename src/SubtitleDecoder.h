@@ -10,7 +10,7 @@ NAMESPACE_BEGIN
 
 typedef int SubtitleDecoderId;
 class SubtitleDecoderPrivate;
-class FFPRO_EXPORT SubtitleDecoder: public AVDecoder
+class SubtitleDecoder: public AVDecoder
 {
     DPTR_DECLARE_PRIVATE(SubtitleDecoder)
 public:

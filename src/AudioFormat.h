@@ -8,7 +8,7 @@
 NAMESPACE_BEGIN
 
 class AudioFormatPrivate;
-class FFPRO_EXPORT AudioFormat
+class AudioFormat
 {
     DPTR_DECLARE_PRIVATE(AudioFormat)
 

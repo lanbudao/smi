@@ -27,7 +27,7 @@ enum SurfaceType {
 };
 
 class VideoFramePrivate;
-class FFPRO_EXPORT VideoFrame: public Frame
+class VideoFrame: public Frame
 {
     DPTR_DECLARE_PRIVATE(VideoFrame)
 public:
