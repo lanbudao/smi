@@ -7,5 +7,3 @@ set(PORTAUDIO_DIR E:/source/opensource/portaudio)
 
 # If u want to build the example of SDL, set the SDL_DIR
 set(SDL_DIR E:/source/opensource/sdl)
-
-set(SOUNDTOUCH_DIR E:/source/opensource/soundtouch)
