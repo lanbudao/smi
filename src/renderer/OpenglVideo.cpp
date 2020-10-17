@@ -150,11 +150,15 @@ void OpenglVideoPrivate::updateGeometry(VideoShader* shader, const RectF &t, con
 OpenglVideo::OpenglVideo():
 	d_ptr(new OpenglVideoPrivate)
 {
+    if (!gladLoadGL()) {
+        AVError("glad load GL failed!\n");
+        return;
+    }
 #ifdef RENDER_TEST
 	media_info = nullptr;
 	program = nullptr;
 	vao = nullptr;
-	fill(0, 255, 255, 255);
+	fill(Color(0, 255, 255, 255));
 #else
 	initialize();
 #endif
@@ -184,10 +188,10 @@ void OpenglVideo::initGL()
 #ifdef TEST_YUV
 	int width = 400, height = 240;
 #else
-	if (media_info->sel_video_idx < 0)
-		return;
-	int width = media_info->videos.at(media_info->sel_video_idx).width;
-	int height = media_info->videos.at(media_info->sel_video_idx).height;
+	//if (media_info->video)
+	//	return;
+    int width = 1238;// media_info->video->width;
+    int height = 480;// media_info->video->height;
 #endif
 	program = new GLShaderProgram();
 	vao = new GLArray();
@@ -223,8 +227,8 @@ void OpenglVideo::initGL()
 	vao->unbind();
 #endif
 
-	program->addShaderFromSourceCode(OpenglAide::Vertex, vString);
-	program->addShaderFromSourceCode(OpenglAide::Fragment, tString);
+	program->addShaderFromSourceCode(GLShaderProgram::Vertex, vString);
+	program->addShaderFromSourceCode(GLShaderProgram::Fragment, tString);
 	program->bindAttributeLocation("vertexIn", A_VER);
 	program->bindAttributeLocation("textureIn", T_VER);
 	program->link();

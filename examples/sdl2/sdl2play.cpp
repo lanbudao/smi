@@ -4,7 +4,7 @@
 #include "sdk/AVLog.h"
 #include "SDL.h"
 
-using namespace FFPRO;
+using namespace FFPROC;
 
 const Uint32 update_event = SDL_USEREVENT + 10;
 
@@ -35,19 +35,18 @@ int main(int argc, char *argv[])
     AVDebug("The name of file to play: %s\n", fileName);
 
     Player *player = new Player();
-	player->loadGLLoader(SDL_GL_GetProcAddress);
     player->setMedia(fileName);
     player->addVideoRenderer(w, h);
 //    player->setWantedStreamSpec(MediaTypeAudio, "3");
-    player->setMediaStatusCallback([window](FFPRO::MediaStatus status){
+    player->setMediaStatusCallback([window](FFPROC::MediaStatus status){
         switch (status) {
-        case FFPRO::Loaded:
+        case FFPROC::Loaded:
             SDL_SetWindowTitle(window, "LoadedMedia");
             break;
-        case FFPRO::End:
+        case FFPROC::End:
             SDL_SetWindowTitle(window, "EndOfMedia");
             break;
-        case FFPRO::Buffered:
+        case FFPROC::Buffered:
             SDL_SetWindowTitle(window, "Buffered");
             break;
         }
@@ -65,7 +64,7 @@ int main(int argc, char *argv[])
     player->setBufferPara(BufferTime, 3 * 1000);
     //player->setClockType(SyncToVideo);
     player->setResampleType(ResampleSoundtouch);
-    player->setSpeed(2.0);
+    //player->setSpeed(2.0);
     player->prepare();
 
     /*Set window icon*/

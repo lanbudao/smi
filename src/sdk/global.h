@@ -45,7 +45,7 @@ using namespace std;
 #define PU_SIGNALS public
 #define PU_EMIT
 
-#define NAMESPACE_BEGIN namespace FFPRO {
+#define NAMESPACE_BEGIN namespace FFPROC {
 #define NAMESPACE_END }
 
 #define SAFE_DELETE(p) if (p) {delete p; p = nullptr;} 

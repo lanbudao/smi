@@ -22,7 +22,7 @@ public:
     Player();
     ~Player();
 
-	void loadGLLoader(std::function<void*(const char*)> p);
+	//void loadGLLoader(std::function<void*(const char*)> p);
 
     void setMedia(const char *url);
     /**

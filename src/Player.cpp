@@ -13,10 +13,11 @@ Player::~Player()
 	stop();
 }
 
-void Player::loadGLLoader(std::function<void*(const char*)> p)
-{
-	gladLoadGLLoader((GLADloadproc)(*p.target<void*(*)(const char*)>()));
-}
+//void Player::loadGLLoader(std::function<void*(const char*)> p)
+//{
+    //gladLoadGL();
+	//gladLoadGLLoader((GLADloadproc)(*p.target<void*(*)(const char*)>()));
+//}
 
 void Player::setMedia(const char *url)
 {
@@ -54,7 +55,7 @@ void Player::prepare()
     }
     if (d->mediaStatusChanged)
         d->mediaStatusChanged(Loaded);
-	d->initRenderVideo();
+    d->initRenderVideo();
     d->clock.setMaxDuration(d->demuxer->maxDuration());
     d->playInternal();
 }
