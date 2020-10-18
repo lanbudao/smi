@@ -1,5 +1,7 @@
 #include "sdk/global.h"
 #include "AudioOutputBackend.h"
+#include "mkid.h"
+#include "Factory.h"
 
 NAMESPACE_BEGIN
 
@@ -23,6 +25,9 @@ private:
     bool isInitialized;
     double outputLatency;
 };
+typedef AudioOutputDSound AudioOutputBackendDsound;
+static const AudioOutputBackendId AudioOutputBackendId_Dsound = mkid::id32base36_6<'D', 's', 'o', 'u', 'n', 'd'>::value;
+FACTORY_REGISTER(AudioOutputBackend, Dsound, "Dsound")
 
 AudioOutputDSound::AudioOutputDSound()
 {

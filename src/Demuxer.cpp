@@ -152,7 +152,7 @@ public:
 
     MediaInfo *media_info;
 
-    const char* url;
+    std::string url;
     AVFormatContext *format_ctx;
     AVInputFormat *input_format;
     AVDictionary *format_opts;
@@ -199,7 +199,7 @@ Demuxer::~Demuxer()
 
 }
 
-void Demuxer::setMedia(const char* url)
+void Demuxer::setMedia(const std::string& url)
 {
     DPTR_D(Demuxer);
     d->url = url;
@@ -246,7 +246,7 @@ int Demuxer::load()
         return AVERROR(ENOMEM);
     }
 
-    if (avformat_open_input(&d->format_ctx, d->url, d->input_format, &d->format_opts) != 0) {
+    if (avformat_open_input(&d->format_ctx, d->url.c_str(), d->input_format, &d->format_opts) != 0) {
         avformat_close_input(&d->format_ctx);
         return AVERROR(ENFILE);
     }
@@ -266,7 +266,7 @@ int Demuxer::load()
     d->realTime = d->isRealTime();
 
     if (d->show_status)
-        av_dump_format(d->format_ctx, 0, d->url, 0);
+        av_dump_format(d->format_ctx, 0, d->url.c_str(), 0);
     for (i = 0; static_cast<unsigned int>(i) < d->format_ctx->nb_streams; i++) {
         AVStream *st = d->format_ctx->streams[i];
         //Fuck this flag

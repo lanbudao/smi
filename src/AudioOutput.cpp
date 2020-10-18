@@ -107,7 +107,10 @@ public:
     }
     ~AudioOutputPrivate()
     {
-
+        if (backend) {
+            backend->close();
+            delete backend;
+        }
     }
 
     void updateScaleSamples()
@@ -140,15 +143,15 @@ AudioOutput::AudioOutput():
 
 AudioOutput::~AudioOutput()
 {
-
+    close();
 }
 
-extern void AudioOutput_RegisterAll();
 std::vector<string> AudioOutput::backendsAvailable()
 {
-    AudioOutput_RegisterAll();
     static std::vector<string> backends;
     if (!backends.empty())
+        return backends;
+    if (AudioOutputBackend::count() <= 0)
         return backends;
     AudioOutputBackendId *i = nullptr;
     while ((i = AudioOutputBackend::next(i)) != nullptr) {

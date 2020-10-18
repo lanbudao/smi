@@ -342,7 +342,8 @@ public:
             std::unique_lock<std::mutex> lock(condMutex_);
             threadSync_ = true;
             proceedCond_.notify_all();
-            hitEmptyCond_.wait(lock);
+            //hitEmptyCond_.wait(lock);
+            hitEmptyCond_.wait_for(lock, std::chrono::microseconds(50));
         }
 
         {

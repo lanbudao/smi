@@ -6,16 +6,6 @@ NAMESPACE_BEGIN
 
 FACTORY_DEFINE(AudioOutputBackend)
 
-void AudioOutput_RegisterAll()
-{
-    ONLY_RUN_ONES;
-    if (!AudioOutputBackendFactory::instance().registeredIds().empty()) {
-        return;
-    }
-    extern bool RegisterAudioOutputBackendPortAudio_Man();
-    RegisterAudioOutputBackendPortAudio_Man();
-}
-
 AudioOutputBackend::AudioOutputBackend():
     d_ptr(new AudioOutputBackendPrivate)
 {
@@ -31,7 +21,10 @@ std::vector<std::string> AudioOutputBackend::defaultPriority()
 {
     static std::vector<std::string> backends;
 
+#ifdef FFPROC_HAVE_PORTAUDIO
     backends.push_back("PortAudio");
+#endif
+    backends.push_back("Dsound");
 
     return backends;
 }

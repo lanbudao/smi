@@ -24,7 +24,7 @@ public:
 
 	//void loadGLLoader(std::function<void*(const char*)> p);
 
-    void setMedia(const char *url);
+    void setMedia(const std::string& url);
     /**
      * @brief select desired audio stream, video stream and subtitle stream
      * Should be called before "prepare()" method

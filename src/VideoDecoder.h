@@ -43,6 +43,7 @@ public:
     static VideoDecoderId* next(VideoDecoderId* id = 0);
     static const char* name(VideoDecoderId id);
     static VideoDecoderId id(const char* name);
+    static size_t count();
 
     virtual int decode(const Packet& packet) = 0;
 

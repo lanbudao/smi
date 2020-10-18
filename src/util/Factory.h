@@ -36,6 +36,7 @@
         static T##Id* next(T##Id* id = nullptr); \
         static const char* name(T##Id id); \
         static T##Id id(const char* name); \
+        static size_t count(); \
     private: \
         template<class C> static T* create() { return new C();} \
         typedef T* (*T##Creator)(); \
@@ -60,7 +61,8 @@
         return (T##Id*)&*(it++); \
     } \
     T##Id T::id(const char* name) { printf(#T "::id(\"%s\")\n", name); return T##Factory::instance().id(name, false);} \
-    const char* T::name(T##Id id) {return T##Factory::instance().name(id);}
+    const char* T::name(T##Id id) {return T##Factory::instance().name(id);} \
+    size_t T::count() {return T##Factory::instance().count();}
 
 /**
  * Internal class

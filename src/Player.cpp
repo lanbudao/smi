@@ -19,7 +19,7 @@ Player::~Player()
 	//gladLoadGLLoader((GLADloadproc)(*p.target<void*(*)(const char*)>()));
 //}
 
-void Player::setMedia(const char *url)
+void Player::setMedia(const std::string& url)
 {
     DPTR_D(Player);
 
@@ -44,9 +44,7 @@ void Player::setMediaStreamDisable(MediaType type)
 void Player::prepare()
 {
     DPTR_D(Player);
-    if (!d->url)
-        return;
-    if (strlen(d->url) == 0)
+    if (d->url.empty())
         return;
     d->loaded = !(d->demuxer->load());
     if (!d->loaded) {

@@ -22,7 +22,7 @@ public:
         demuxer(nullptr),
         audio_thread(nullptr),
         video_thread(nullptr),
-        stopped(false),
+        stopped(true),
         paused(false),
         last_paused(false),
         main_buffer(nullptr),

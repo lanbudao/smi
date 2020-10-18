@@ -51,7 +51,7 @@ public:
     {
         if (ao) {
             if (ao->isOpen())
-				ao->close();
+                ao->close();
             delete ao;
             ao = nullptr;
         }
@@ -87,7 +87,7 @@ public:
 
     void onSeekFinished(void*) { seeking = false; }
 
-    const char* url;
+    std::string url;
     bool loaded;
     bool paused;
     bool seeking;

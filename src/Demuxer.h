@@ -28,7 +28,7 @@ public:
         FindStreamError,
     };
 
-    void setMedia(const char* url);
+    void setMedia(const std::string& url);
     void setWantedStreamSpec(MediaType type, const char* spec);
     void setMediaStreamDisable(MediaType type);
     int  load();

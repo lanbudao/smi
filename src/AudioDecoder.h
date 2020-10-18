@@ -41,6 +41,7 @@ public:
     static AudioDecoderId* next(AudioDecoderId* id = 0);
     static const char* name(AudioDecoderId id);
     static AudioDecoderId id(const char* name);
+    static size_t count();
 
     virtual int decode(const Packet& packet) = 0;
 

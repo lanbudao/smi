@@ -38,6 +38,7 @@ public:
     static SubtitleDecoderId* next(SubtitleDecoderId* id = 0);
     static const char* name(SubtitleDecoderId id);
     static SubtitleDecoderId id(const char* name);
+    static size_t count();
 
     virtual bool decode(const Packet& packet) = 0;
 

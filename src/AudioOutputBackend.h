@@ -43,6 +43,7 @@ public:
     static AudioOutputBackendId* next(AudioOutputBackendId* id = 0);
     static const char* name(AudioOutputBackendId id);
     static AudioOutputBackendId id(const char* name);
+    static size_t count();
 
 private:
     template<class C> static AudioOutputBackend* create() { return new C();}
