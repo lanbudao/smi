@@ -7,6 +7,7 @@
 #include <QtWidgets/QToolBar>
 #include <QHBoxLayout>
 #include <QResizeEvent>
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent)
@@ -15,6 +16,12 @@ MainWindow::MainWindow(QWidget *parent) :
     this->setWindowTitle(QString::fromUtf8("ffproc"));
     menuBar = new QMenuBar(this);
     menuBar->setObjectName(QString::fromUtf8("menuBar"));
+    fileMenu = new QMenu(QString::fromUtf8("File"));
+    openfileAction = new QAction(QString::fromUtf8("Open"));
+    fileMenu->addAction(openfileAction);
+    stopAction = new QAction(QString::fromUtf8("Stop"));
+    fileMenu->addAction(stopAction);
+    menuBar->addMenu(fileMenu);
     this->setMenuBar(menuBar);
     mainToolBar = new QToolBar(this);
     mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
@@ -31,8 +38,19 @@ MainWindow::MainWindow(QWidget *parent) :
     layout->addWidget(glRender);
     centralWidget->setLayout(layout);
     glRender->setSource(player);
-    player->setMedia("E:/media/Æ½·²Ö®Â·.mp4");
-    player->play();
+
+    connect(openfileAction, &QAction::triggered, [this](bool checked) {
+        QString file = QFileDialog::getOpenFileName(this,
+            tr("Open a media file"),
+            tr(""));
+        if (!file.isEmpty()) {
+            player->setMedia(file.toUtf8().data());
+            player->play();
+        }
+    });
+    connect(stopAction, &QAction::triggered, [this](bool checked) {
+        player->stop();
+    });
 }
 
 MainWindow::~MainWindow()

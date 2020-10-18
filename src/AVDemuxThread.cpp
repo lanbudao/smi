@@ -93,22 +93,22 @@ void AVDemuxThread::stop()
         return;
     d->stopped = true;
     this->wait();
-    if (d->audio_thread) {
-        d->audio_thread->packets()->clear();
-        d->audio_thread->packets()->blockFull(false);
-        d->audio_thread->stop();
-        d->audio_thread->wait();
-        delete d->audio_thread;
-        d->audio_thread = nullptr;
-    }
-    if (d->video_thread) {
-        d->video_thread->packets()->clear();
-        d->video_thread->packets()->blockFull(false);
-        d->video_thread->stop();
-        d->video_thread->wait();
-        delete d->video_thread;
-        d->video_thread = nullptr;
-    }
+    //if (d->audio_thread) {
+    //    d->audio_thread->packets()->clear();
+    //    d->audio_thread->packets()->blockFull(false);
+    //    d->audio_thread->stop();
+    //    d->audio_thread->wait();
+    //    delete d->audio_thread;
+    //    d->audio_thread = nullptr;
+    //}
+    //if (d->video_thread) {
+    //    d->video_thread->packets()->clear();
+    //    d->video_thread->packets()->blockFull(false);
+    //    d->video_thread->stop();
+    //    d->video_thread->wait();
+    //    delete d->video_thread;
+    //    d->video_thread = nullptr;
+    //}
 }
 
 void AVDemuxThread::pause(bool p)

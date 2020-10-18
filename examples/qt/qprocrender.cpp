@@ -26,7 +26,7 @@ void QProcRender::initializeGL()
 
 void QProcRender::resizeGL(int w, int h)
 {
-    double dpi = QApplication::primaryScreen()->devicePixelRatio();
+    double dpi = devicePixelRatio();
     player->setVideoRender(this->width() * dpi, this->height() * dpi, this);
 }
 

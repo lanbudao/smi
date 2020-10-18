@@ -21,6 +21,7 @@ QProcPlayer::~QProcPlayer()
 
 void QProcPlayer::setMedia(const std::string &url)
 {
+    player->setResampleType(ResampleSoundtouch);
     player->setMedia(url);
 }
 

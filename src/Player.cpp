@@ -44,6 +44,7 @@ void Player::setMediaStreamDisable(MediaType type)
 void Player::prepare()
 {
     DPTR_D(Player);
+    stop();
     if (d->url.empty())
         return;
     d->loaded = !(d->demuxer->load());
@@ -80,6 +81,22 @@ void Player::stop()
 	if (!d->loaded)
 		return;
 	d->demux_thread->stop();
+    if (d->audio_thread) {
+        d->audio_thread->packets()->clear();
+        d->audio_thread->packets()->blockFull(false);
+        d->audio_thread->stop();
+        d->audio_thread->wait();
+        delete d->audio_thread;
+        d->audio_thread = nullptr;
+    }
+    if (d->video_thread) {
+        d->video_thread->packets()->clear();
+        d->video_thread->packets()->blockFull(false);
+        d->video_thread->stop();
+        d->video_thread->wait();
+        delete d->video_thread;
+        d->video_thread = nullptr;
+    }
 	d->demuxer->unload();
     d->loaded = false;
 }

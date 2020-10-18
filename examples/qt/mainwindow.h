@@ -24,6 +24,8 @@ private:
     QStatusBar *statusBar;
     QProcRender* glRender;
     QProcPlayer* player;
+    QMenu* fileMenu;
+    QAction* openfileAction, *stopAction;
 };
 
 #endif // MAINWINDOW_H
