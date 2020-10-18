@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
     Player *player = new Player();
     player->setMedia(fileName);
-    player->addVideoRenderer(w, h);
+    player->setVideoRenderer(w, h);
 //    player->setWantedStreamSpec(MediaTypeAudio, "3");
     player->setMediaStatusCallback([window](FFPROC::MediaStatus status){
         switch (status) {

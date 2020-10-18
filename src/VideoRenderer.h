@@ -23,6 +23,9 @@ public:
 
     virtual ~VideoRenderer();
 
+    void setOpaque(void* o);
+    void* opaque() const;
+
 	void initVideoRender();
 
     virtual void setBackgroundColor(const Color &c);

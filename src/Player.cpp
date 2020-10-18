@@ -221,11 +221,20 @@ void Player::setRenderCallback(std::function<void (void *)> cb)
     }
 }
 
-VideoRenderer* Player::addVideoRenderer(int w, int h)
+VideoRenderer* Player::setVideoRenderer(int w, int h, void* opaque)
 {
     DPTR_D(Player);
+    std::list<AVOutput*> outputs = d->video_output_set.outputs();
+    std::list<AVOutput *>::iterator itor;
+    for (itor = outputs.begin(); itor != outputs.end(); itor++) {
+        VideoRenderer *render = reinterpret_cast<VideoRenderer *>(*itor);
+        if (render->opaque() == opaque) {
+            render->resizeWindow(w, h);
+        }
+    }
     VideoRenderer *renderer = new VideoRenderer();
-    renderer->setMediaInfo(&d->mediainfo);
+    renderer->setOpaque(opaque);
+    renderer->setMediaInfo(&d->mediainfo); // for test
     renderer->resizeWindow(w, h);
     d->video_output_set.addOutput((AVOutput*)renderer);
     return renderer;

@@ -11,6 +11,7 @@ class VideoRendererPrivate: public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():
+        opaque(nullptr),
         renderer_width(0),
         renderer_height(0),
 		glv(nullptr),
@@ -33,6 +34,7 @@ public:
 
 	bool computeOutParameters(double outAspectRatio);
 
+    void* opaque;
     int renderer_width, renderer_height;
     VideoRenderer::OutAspectRatioMode out_ratio_mode;
 	OpenglVideo *glv;

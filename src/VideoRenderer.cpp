@@ -23,6 +23,17 @@ VideoRenderer::~VideoRenderer()
 
 }
 
+void VideoRenderer::setOpaque(void * o)
+{
+    DPTR_D(VideoRenderer);
+    d->opaque = o;
+}
+
+void * VideoRenderer::opaque() const
+{
+    return d_func()->opaque;
+}
+
 void VideoRenderer::initVideoRender()
 {
 	DPTR_D(VideoRenderer);
@@ -152,7 +163,7 @@ void VideoRenderer::update()
 {
     DPTR_D(VideoRenderer);
     d->frame_changed = true;
-    CALL_BACK(d->render_cb, nullptr);
+    CALL_BACK(d->render_cb, d->opaque);
 }
 
 void VideoRenderer::setOutAspectRatio(double ratio)

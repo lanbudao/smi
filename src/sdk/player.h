@@ -93,7 +93,7 @@ public:
 
     void renderVideo();
     void setRenderCallback(std::function<void(void* vo_opaque)> cb);
-    VideoRenderer* addVideoRenderer(int w, int h);
+    VideoRenderer* setVideoRenderer(int w, int h, void* opaque = nullptr);
     void addVideoRenderer(VideoRenderer *renderer);
     void resizeWindow(int w, int h);
 
