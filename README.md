@@ -41,7 +41,7 @@ set(SDL_DIR  /usr/local/opensource/sdl)
 
 #### Reference
 
-- QtAV,[http://https://github.com/wang-bin/QtAV](http://https://github.com/wang-bin/QtAV)
-- ijkPlayer,[http://https://github.com/bilibili/ijkplayer](http://https://github.com/bilibili/ijkplayer)
-- limlog,[http://https://github.com/zxhio/limlog](http://https://github.com/zxhio/limlog)
-- mdk-sdk,[http://https://github.com/wang-bin/mdk-sdk](http://https://github.com/wang-bin/mdk-sdk)
+- QtAV,[https://github.com/wang-bin/QtAV](https://github.com/wang-bin/QtAV)
+- ijkPlayer,[https://github.com/bilibili/ijkplayer](https://github.com/bilibili/ijkplayer)
+- limlog,[https://github.com/zxhio/limlog](https://github.com/zxhio/limlog)
+- mdk-sdk,[https://github.com/wang-bin/mdk-sdk](https://github.com/wang-bin/mdk-sdk)
