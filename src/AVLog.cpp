@@ -1,20 +1,8 @@
 #include "AVLog.h"
 
-#include <algorithm>
-#include <atomic>
-#include <condition_variable>
-#include <mutex>
-#include <string>
+#include <cstdarg>
 #include <thread>
 #include <vector>
-
-#include <inttypes.h>
-#include <stdint.h> // uint32_t
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <cstdarg>
-
 #ifdef __linux
 #include <sys/time.h>
 #include <sys/syscall.h> // gettid().
@@ -26,77 +14,9 @@ typedef pid_t thread_id_t;
 typedef unsigned int thread_id_t; // MSVC
 #endif
 
+#include "util/logsink.h"
+
 NAMESPACE_BEGIN
-
-/// Wrapper of timestamp.
-class Timestamp {
-public:
-    Timestamp() : timestamp_(0) {}
-    Timestamp(uint64_t timestamp) : timestamp_(timestamp) {}
-
-    /// Timestamp of current timestamp.
-    static Timestamp now() {
-        uint64_t timestamp = 0;
-
-#ifdef __linux
-        // use gettimeofday(2) is 15% faster then std::chrono in linux.
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        timestamp = tv.tv_sec * kUSecPerSec + tv.tv_usec;
-#else
-        timestamp = std::chrono::duration_cast<std::chrono::microseconds>(
-                    std::chrono::system_clock().now().time_since_epoch())
-                .count();
-#endif
-
-        return Timestamp(timestamp);
-    }
-
-    /// Formatted string of today.
-    /// e.g. 20180805
-    std::string date() const { return std::string(datetime(), 0, 8); }
-
-    /// Formatted string of current second include date and time.
-    /// e.g. 20180805 14:45:20
-    std::string datetime() const {
-        // reduce count of calling strftime by thread_local.
-        static thread_local time_t t_second = 0;
-        static thread_local char t_datetime[24]; // 20190816 15:32:25
-        time_t nowsec = timestamp_ / kUSecPerSec;
-        if (t_second < nowsec) {
-            t_second = nowsec;
-            struct tm *st_time = localtime(&t_second);
-            strftime(t_datetime, sizeof(t_datetime), "%Y%m%d %H:%M:%S", st_time);
-        }
-
-        return t_datetime;
-    }
-
-    /// Formatted string of current second include time only.
-    /// e.g. 144836
-    std::string time() const {
-        std::string time(datetime(), 9, 16);
-        time.erase(std::remove(time.begin(), time.end(), ':'), time.end());
-        return time;
-    }
-
-    /// Formatted string of current timestamp. eg, 20190701 16:28:30.070981
-    /// e.g. 20200709 14:48:36.458074
-    std::string formatTimestamp() const {
-        char format[28];
-        uint32_t micro = static_cast<uint32_t>(timestamp_ % kUSecPerSec);
-        snprintf(format, sizeof(format), "%s.%06u", datetime().c_str(), micro);
-        return format;
-    }
-
-    /// Current timestamp (us).
-    /// e.g. 1594277460153980
-    uint64_t timestamp() const { return timestamp_; }
-
-private:
-    uint64_t timestamp_;
-    static const uint32_t kUSecPerSec = 1000000;
-};
 
 // The digits table is used to look up for number within 100.
 // Each two character corresponds to one digit and ten digits.
@@ -183,399 +103,14 @@ static inline thread_id_t gettid() {
     return t_tid;
 }
 
-// Stringify log level with width of 5.
-static const char *stringifyLogLevel(LogLevel level) {
-    switch (level) {
-    case LogFatal:
-        return "FATAL";
-    case LogError:
-        return "ERROR";
-    case LogWarning:
-        return "WARN ";
-    case LogInfo:
-        return "INFO ";
-    case LogDebug:
-        return "DEBUG";
-    case LogTrace:
-        return "TRACE";
-    }
-    return "NONE";
-}
-
-/// Circle FIFO blocking produce/consume byte queue. Hold log info to wait for
-/// background thread consume. It exists in each thread.
-class BlockingBuffer {
-public:
-    BlockingBuffer()
-        : producePos_(0), consumePos_(0), consumablePos_(0), produceCount_(0) {}
-
-    /// Get position offset calculated from buffer start.
-    uint32_t offsetOfPos(uint32_t pos) const { return pos & (size() - 1); }
-
-    /// Buffer size.
-    uint32_t size() const { return kBlockingBufferSize; }
-
-    /// Already used bytes.
-    /// It may be called by different threads, so add memory barrier to
-    /// ensure the lasted *Pos_ is read.
-    uint32_t used() const {
-        std::atomic_thread_fence(std::memory_order_acquire);
-        return producePos_ - consumePos_;
-    }
-
-    /// Unused bytes.
-    uint32_t unused() const { return kBlockingBufferSize - used(); }
-
-    /// Reset buffer's position.
-    void reset() { producePos_ = consumePos_ = 0; }
-
-    /// The position at the end of the last complete log.
-    uint32_t consumable() const {
-        std::atomic_thread_fence(std::memory_order_acquire);
-        return consumablePos_ - consumePos_;
-    }
-
-    /// Increase consumable position with a complete log length \p n .
-    void incConsumablePos(uint32_t n) {
-        consumablePos_ += n;
-        std::atomic_thread_fence(std::memory_order_release);
-    }
-
-    /// Peek the produce position in buffer.
-    char *peek() { return &storage_[producePos_]; }
-
-    /// consume n bytes data and only move the consume position.
-    void consume(uint32_t n) { consumePos_ += n; }
-
-    /// consume \p n bytes data to \p to .
-    uint32_t consume(char *to, uint32_t n) {
-        // available bytes to consume.
-        uint32_t avail = std::min(consumable(), n);
-
-        // offset of consumePos to buffer end.
-        uint32_t off2End = std::min(avail, size() - offsetOfPos(consumePos_));
-
-        // first put the data starting from consumePos until the end of buffer.
-        memcpy(to, storage_ + offsetOfPos(consumePos_), off2End);
-
-        // then put the rest at beginning of the buffer.
-        memcpy(to + off2End, storage_, avail - off2End);
-
-        consumePos_ += avail;
-        std::atomic_thread_fence(std::memory_order_release);
-
-        return avail;
-    }
-
-    /// Copy \p n bytes log info from \p from to buffer. It will be blocking
-    /// when buffer space is insufficient.
-    void produce(const char *from, uint32_t n) {
-        while (unused() < n)
-            /* blocking */;
-
-        // offset of producePos to buffer end.
-        uint32_t off2End = std::min(n, size() - offsetOfPos(producePos_));
-
-        // first put the data starting from producePos until the end of buffer.
-        memcpy(storage_ + offsetOfPos(producePos_), from, off2End);
-
-        // then put the rest at beginning of the buffer.
-        memcpy(storage_, from + off2End, n - off2End);
-
-        produceCount_++;
-        producePos_ += n;
-        std::atomic_thread_fence(std::memory_order_release);
-    }
-
-private:
-    static const uint32_t kBlockingBufferSize = 1 << 20; // 1 MB
-    uint32_t producePos_;
-    uint32_t consumePos_;
-    uint32_t consumablePos_; // increase every time with a complete log length.
-    uint32_t produceCount_;
-    char storage_[kBlockingBufferSize]; // buffer size power of 2.
+static const char* log_level_string[LogFatal] = {
+    "TRACE",
+    "DEBUG",
+    "INFO",
+    "WARN",
+    "ERROR",
+    "FATAL",
 };
-
-/// Sink log info on file, and the file automatic roll with a setting size.
-/// If set log file, initially the log file format is `filename.date.log `.
-class LogSink {
-public:
-    LogSink() : LogSink(10) {}
-
-    LogSink(uint32_t rollSize)
-        : level_(LogWarning),
-          fileCount_(0),
-          rollSize_(rollSize),
-          writtenBytes_(0),
-          fileName_(kDefaultLogFile),
-          date_(Timestamp::now().date()),
-          fp_(nullptr),
-
-          threadSync_(false),
-          threadExit_(false),
-          outputFull_(false),
-          sinkCount_(0),
-          logCount_(0),
-          totalSinkTimes_(0),
-          totalConsumeBytes_(0),
-          perConsumeBytes_(0),
-          bufferSize_(1 << 24),
-          outputBuffer_(nullptr),
-          doubleBuffer_(nullptr),
-          threadBuffers_(),
-          sinkThread_(),
-          bufferMutex_(),
-          condMutex_(),
-          proceedCond_(),
-          hitEmptyCond_()
-    {
-        outputBuffer_ = static_cast<char *>(malloc(bufferSize_));
-        doubleBuffer_ = static_cast<char *>(malloc(bufferSize_));
-        // alloc memory exception handle.
-        sinkThread_ = std::thread(&LogSink::sinkThreadFunc, this);
-
-    }
-    ~LogSink()
-    {
-        {
-            // notify background thread befor the object detoryed.
-            std::unique_lock<std::mutex> lock(condMutex_);
-            threadSync_ = true;
-            proceedCond_.notify_all();
-            //hitEmptyCond_.wait(lock);
-            hitEmptyCond_.wait_for(lock, std::chrono::microseconds(50));
-        }
-
-        {
-            // stop sink thread.
-            std::lock_guard<std::mutex> lock(condMutex_);
-            threadExit_ = true;
-            proceedCond_.notify_all();
-        }
-
-        if (sinkThread_.joinable())
-            sinkThread_.join();
-
-        free(outputBuffer_);
-        free(doubleBuffer_);
-
-        for (auto &buf : threadBuffers_)
-            free(buf);
-
-        listStatistic();
-        if (fp_) {
-            fclose(fp_);
-        }
-    }
-
-    static LogSink* instance()
-    {
-        static LogSink sink;
-        return &sink;
-    }
-
-    void setLogFile(const char *file) {
-        fileName_.assign(file);
-        rollFile();
-    }
-
-    void setRollSize(uint32_t size) { rollSize_ = size; }
-
-    LogLevel getLogLevel() const { return level_; };
-    void setLogLevel(LogLevel level) { level_ = level; }
-    /// Roll File with size. The new filename contain log file count.
-    void rollFile() {
-        if (fp_)
-            fclose(fp_);
-
-        std::string file(fileName_ + '-' + date_);
-        if (fileCount_)
-            file += '(' + std::to_string(fileCount_) + ").log";
-        else
-            file += ".log";
-
-        fp_ = fopen(file.c_str(), "a+");
-        if (!fp_) {
-            fprintf(stderr, "Faild to open file:%s\n", file.c_str());
-            exit(-1);
-        }
-
-        fileCount_++;
-    }
-
-    /// Sink log data \p data of length \p len to file.
-    size_t sink(const char *data, size_t len) {
-        if (fp_ == nullptr)
-            rollFile();
-
-        std::string today(Timestamp::now().date());
-        if (date_.compare(today)) {
-            date_.assign(today);
-            fileCount_ = 0;
-            rollFile();
-        }
-
-        uint64_t rollBytes = rollSize_ * kBytesPerMb;
-        if (writtenBytes_ % rollBytes + len > rollBytes)
-            rollFile();
-
-        return write(data, len);
-    }
-
-    /// Produce log data \p data to BlockingBuffer in each thread.
-    void produce(const char *data, size_t n) {
-        blockingBuffer()->produce(data, static_cast<uint32_t>(n));
-    }
-
-    /// Increase BlockingBuffer consumable position.
-    void incConsumable(uint32_t n) {
-        blockingBuffer()->incConsumablePos(n);
-        logCount_.fetch_add(1, std::memory_order_relaxed);
-    }
-
-    /// List log related statistic.
-    void listStatistic() const {
-        printf("\n");
-        printf("=== Logging System Related Data ===\n");
-        printf("  Total produced logs count: [%" PRIu64 "].\n", logCount_.load());
-        printf("  Total bytes of sinking to file: [%" PRIu64 "] bytes.\n",
-               totalConsumeBytes_);
-        printf("  Average bytes of sinking to file: [%" PRIu64 "] bytes.\n",
-               sinkCount_ == 0 ? 0 : totalConsumeBytes_ / sinkCount_);
-        printf("  Count of sinking to file: [%u].\n", sinkCount_);
-        printf("  Total microseconds takes of sinking to file: [%" PRIu64 "] us.\n",
-               totalSinkTimes_);
-        printf("  Average microseconds takes of sinking to file: [%" PRIu64 "] us.\n",
-               sinkCount_ == 0 ? 0 : totalSinkTimes_ / sinkCount_);
-        printf("\n");
-    }
-
-
-private:
-    LogLevel level_;
-    uint32_t fileCount_;    // file roll count.
-    uint32_t rollSize_;     // size of MB.
-    uint64_t writtenBytes_; // total written bytes.
-    std::string fileName_;
-    std::string date_;
-    FILE *fp_;
-    static const uint32_t kBytesPerMb = 1 << 20;
-    static constexpr const char *kDefaultLogFile = "ffpro";
-
-    size_t write(const char *data, size_t len) {
-        size_t n = fwrite(data, 1, len, fp_);
-        size_t remain = len - n;
-        while (remain > 0) {
-            size_t x = fwrite(data + n, 1, remain, fp_);
-            if (x == 0) {
-                int err = ferror(fp_);
-                if (err)
-                    fprintf(stderr, "File write error: %s\n", strerror(err));
-                break;
-            }
-            n += x;
-            remain -= x;
-        }
-
-        fflush(fp_);
-        writtenBytes_ += len - remain;
-
-        return len - remain;
-    }
-
-    /// Consume the log info produced by the front end to the file.
-    void sinkThreadFunc();
-
-    BlockingBuffer *blockingBuffer();
-
-    //---------------------------------->
-    bool threadSync_; // front-back-end sync.
-    bool threadExit_; // background thread exit flag.
-    bool outputFull_; // output buffer full flag.
-//    LogLevel level_;
-    uint32_t sinkCount_;             // count of sinking to file.
-    std::atomic<uint64_t> logCount_; // count of produced logs.
-    uint64_t totalSinkTimes_;        // total time takes of sinking to file.
-    uint64_t totalConsumeBytes_;     // total consume bytes.
-    uint32_t perConsumeBytes_;       // bytes of consume first-end data per loop.
-    uint32_t bufferSize_;            // two buffer size.
-    char *outputBuffer_;             // first internal buffer.
-    char *doubleBuffer_;             // second internal buffer.
-    std::vector<BlockingBuffer *> threadBuffers_;
-    std::thread sinkThread_;
-    std::mutex bufferMutex_; // internel buffer mutex.
-    std::mutex condMutex_;
-    std::condition_variable proceedCond_;  // for background thread to proceed.
-    std::condition_variable hitEmptyCond_; // for no data to consume.
-};
-
-void LogSink::sinkThreadFunc()
-{
-    while (!threadExit_) {
-        // move front-end data to internal buffer.
-        {
-            std::lock_guard<std::mutex> lock(bufferMutex_);
-            uint32_t bbufferIdx = 0;
-            // while (!threadExit_ && !outputFull_ && !threadBuffers_.empty()) {
-            while (!threadExit_ && !outputFull_ &&
-                   (bbufferIdx < threadBuffers_.size())) {
-                BlockingBuffer *bbuffer = threadBuffers_[bbufferIdx];
-                uint32_t consumableBytes = bbuffer->consumable();
-
-                if (bufferSize_ - perConsumeBytes_ < consumableBytes) {
-                    outputFull_ = true;
-                    break;
-                }
-
-                if (consumableBytes > 0) {
-                    uint32_t n = bbuffer->consume(outputBuffer_ + perConsumeBytes_,
-                                                  consumableBytes);
-                    perConsumeBytes_ += n;
-                } else {
-                    // threadBuffers_.erase(threadBuffers_.begin() +
-                    // bbufferIdx);
-                }
-                bbufferIdx++;
-            }
-        }
-
-        // not data to sink, go to sleep, 50us.
-        if (perConsumeBytes_ == 0) {
-            std::unique_lock<std::mutex> lock(condMutex_);
-
-            // if front-end generated sync operation, consume again.
-            if (threadSync_) {
-                threadSync_ = false;
-                continue;
-            }
-
-            hitEmptyCond_.notify_one();
-            proceedCond_.wait_for(lock, std::chrono::microseconds(50));
-        } else {
-            uint64_t beginTime = Timestamp::now().timestamp();
-            LogSink::instance()->sink(outputBuffer_, perConsumeBytes_);
-            uint64_t endTime = Timestamp::now().timestamp();
-
-            totalSinkTimes_ += endTime - beginTime;
-            sinkCount_++;
-            totalConsumeBytes_ += perConsumeBytes_;
-            perConsumeBytes_ = 0;
-            outputFull_ = false;
-        }
-    }
-}
-
-BlockingBuffer *LogSink::blockingBuffer()
-{
-    static thread_local BlockingBuffer *buf = nullptr;
-    if (!buf) {
-        std::lock_guard<std::mutex> lock(bufferMutex_);
-        buf = static_cast<BlockingBuffer *>(malloc(sizeof(BlockingBuffer)));
-        threadBuffers_.push_back(buf);
-    }
-    return buf;
-}
-
 
 class DebugPrivate
 {
@@ -617,6 +152,8 @@ public:
     std::string text;
 };
 
+static bool g_output_log = false;
+static LogLevel g_log_level = LogWarning;
 Debug::Debug(LogLevel level):
     d_ptr(new DebugPrivate)
 {
@@ -625,7 +162,7 @@ Debug::Debug(LogLevel level):
 #ifndef HIDE_LOG_DETAIL
     *this << Timestamp::now().formatTimestamp() << ' '
         << gettid() << ' '
-        << stringifyLogLevel(d->level) << "  ";
+        << log+log_level_string[d->level] << "  ";
 #endif
 }
 
@@ -635,8 +172,10 @@ Debug::~Debug()
     if (d->context.file && d->context.function)
         *this << "  " << d->context.file << ':' << d->context.function << " " << d->context.line;
     /// Move consumable position with increaing to ensure a complete log is consumed each time.
-    LogSink::instance()->produce(d->text.c_str(), d->count);
-    LogSink::instance()->incConsumable(d->count); // already produce a complete log.
+    if (g_output_log && d->level >= g_log_level) {
+        G_LOGSINK.produce(d->text.c_str(), d->count);
+        G_LOGSINK.incConsumable(d->count); // already produce a complete log.
+    }
 }
 
 Debug Debug::log(const char *fmt, va_list marker)
@@ -842,33 +381,33 @@ Debug MessageLogger::fatal() const
     return dbg;
 }
 
+void setLogOut(bool b)
+{
+    g_output_log = b;
+}
+
 void setLogLevel(LogLevel level)
 {
-    LogSink::instance()->setLogLevel(level);
+    g_log_level = level;
 }
 
 LogLevel getLogLevel()
 {
-    return LogSink::instance()->getLogLevel();
+    return g_log_level;
 }
 
 void setLogFile(const char *file)
 {
-    LogSink::instance()->setLogFile(file);
+    if (!g_output_log)
+        return;
+    G_LOGSINK.setLogFile(file);
 }
 
 void setRollSize(uint32_t MB)
 {
-    LogSink::instance()->setRollSize(MB);
+    if (!g_output_log)
+        return;
+    G_LOGSINK.setRollSize(MB);
 }
-
-//void MessageLogContext::copy(const MessageLogContext &ctx)
-//{
-//    version = ctx.version;
-//    line = ctx.line;
-//    file = ctx.file;
-//    function = ctx.function;
-//    category = ctx.category;
-//}
 
 NAMESPACE_END

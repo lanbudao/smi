@@ -99,20 +99,31 @@ public:
 
 private:
     class FFPRO_EXPORT MessageLogContext context;
-
 };
 
-/// Set log level, defalt WARN.
+/**
+ * @brief Whether to output log, default value is false
+ */
+void FFPRO_EXPORT setLogOut(bool b);
+/**
+ * @brief Set the level of log, default value is LogWarning
+ */
 void FFPRO_EXPORT setLogLevel(LogLevel level);
 
-/// Get log level.
+/**
+ * @brief Get log level.
+ */
 LogLevel FFPRO_EXPORT getLogLevel();
 
-/// Set log file (basename and dir, no suffix), defalut `./run`.
-/// The Program will automatically add suffix (`.log`).
+/**
+ * @brief Set log file (basename and dir, no suffix), defalut `./run`
+ * The Program will add suffix (`.log`) automatically
+ */ 
+/// 
 void FFPRO_EXPORT setLogFile(const char *file);
 
 void FFPRO_EXPORT setRollSize(uint32_t MB);
 
 NAMESPACE_END
-#endif //Debug_H
+
+#endif //AVLOG_H

@@ -30,7 +30,8 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
 	SDL_GL_SwapWindow(window);
 
-    //FFPRO::setLogFile("E:/log.txt");
+    //FFPROC::setLogOut(true);
+    //FFPROC::setLogFile("E:/sdl2play-log");
     char* fileName = argv[1];
     AVDebug("The name of file to play: %s\n", fileName);
 

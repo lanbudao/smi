@@ -122,7 +122,7 @@ enum BufferMode: uint8_t {
 };
 
 enum LogLevel: uint8_t {
-    LogTrace = 0,
+    LogTrace = 1,
     LogDebug,
     LogInfo,
     LogWarning,
