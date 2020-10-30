@@ -548,7 +548,7 @@ int VideoFormat::bytesPerPixel(int plane) const {
 
 bool VideoFormat::isValid() const {
     //DPTR_D(const VideoFormat);
-    return d->pixfmt != Format_Invalid && d->pixfmt_ff != AV_PIX_FMT_NONE;
+    return d->pixfmt != Format_Invalid || d->pixfmt_ff != AV_PIX_FMT_NONE;
 }
 
 VideoFormat::PixelFormat VideoFormat::pixelFormat() const {

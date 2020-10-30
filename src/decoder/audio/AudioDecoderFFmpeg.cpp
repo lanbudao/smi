@@ -104,7 +104,7 @@ int AudioDecoderFFmpeg::decode(const Packet &pkt)
 
     if (ret < 0) {
         if (ret == AVERROR_EOF) {
-            AVWarning() << "End of file, " << averror2str(ret);
+            AVWarning("AudioDecoder: %s\n", averror2str(ret));
         } else if (ret == AVERROR(EAGAIN)) {
             AVWarning("Audio decoder need new input %s.\n", averror2str(ret));
         } else {

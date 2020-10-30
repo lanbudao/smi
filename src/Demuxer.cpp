@@ -373,17 +373,17 @@ bool Demuxer::seek(double pos, double incr)
         incr = 0;
 	if (startTime() != AV_NOPTS_VALUE && pos < startTime() / (double)AV_TIME_BASE)
 		pos = startTime() / (double)AV_TIME_BASE;
-	int64_t seek_target = (int64_t)(pos * AV_TIME_BASE);
+    int64_t seek_target = (int64_t)(pos * AV_TIME_BASE);
     int64_t seek_rel = (int64_t)(incr * AV_TIME_BASE);
     int64_t seek_min = seek_rel > 0 ? seek_target - seek_rel + 2 : INT64_MIN;
     int64_t seek_max = seek_rel < 0 ? seek_target - seek_rel - 2 : INT64_MAX;
 
 	int seek_flags = 0;
-	if (d->seek_type & SeekAccurate) {
-		seek_flags = AVSEEK_FLAG_ANY;
-	}
-	else if (d->seek_type & SeekKeyFrame) {
-		seek_flags = AVSEEK_FLAG_FRAME;
+    if (d->seek_type & SeekAccurate) {
+        seek_flags = AVSEEK_FLAG_ANY;
+    }
+    else if (d->seek_type & SeekKeyFrame) {
+        seek_flags = AVSEEK_FLAG_FRAME;
     }
     int ret = avformat_seek_file(d->format_ctx, -1, seek_min, seek_target, seek_max, seek_flags);
     /* need to add AVSEEK_FLAG_BACKWARD flag if use av_seek_frame */
@@ -536,6 +536,11 @@ void Demuxer::initMediaInfo()
             }
         }
     }
+}
+
+double Demuxer::startTimeS()
+{
+    return FORCE_DOUBLE(startTime()) / AV_TIME_BASE;
 }
 
 int64_t Demuxer::startTime()

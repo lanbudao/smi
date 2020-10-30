@@ -47,7 +47,7 @@ int VideoDecoderFFmpegBase::decode(const Packet &pkt) {
     }
     if (ret < 0) {
         if (ret == AVERROR_EOF) {
-            AVWarning() << "End of file, " << averror2str(ret);
+            AVWarning("VideoDecoder: %s\n", averror2str(ret));
         } else if (ret == AVERROR(EAGAIN)) {
             AVWarning("Video decoder need new input %s.\n", averror2str(ret));
         } else {

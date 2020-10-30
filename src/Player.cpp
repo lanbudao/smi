@@ -163,7 +163,7 @@ void Player::seek(double t, SeekType type)
     double seek_pos = 0;
     bool forward = true;
     if (type & SeekFromStart) {
-        seek_pos += d->demuxer->startTime();
+        seek_pos += d->demuxer->startTimeS();
         forward = t > pos;
     }
     else {

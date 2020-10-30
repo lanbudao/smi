@@ -51,6 +51,8 @@ public:
     void setMediaInfo(MediaInfo *info);
     void initMediaInfo();
 
+    /* for seconds */
+    double startTimeS();
     int64_t startTime();
     int64_t duration();
 

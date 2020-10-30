@@ -21,12 +21,12 @@ std::vector<std::string> AudioOutputBackend::defaultPriority()
 {
     static std::vector<std::string> backends;
 
-#ifdef FFPROC_HAVE_DSOUND
-    backends.push_back("Dsound");
-#endif // FFPROC_HAVE_DSOUND
 #ifdef FFPROC_HAVE_PORTAUDIO
     backends.push_back("PortAudio");
 #endif
+#ifdef FFPROC_HAVE_DSOUND
+    backends.push_back("Dsound");
+#endif // FFPROC_HAVE_DSOUND
 
     return backends;
 }
