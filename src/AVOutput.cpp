@@ -14,15 +14,15 @@ AVOutput::~AVOutput()
 
 }
 
-bool AVOutput::isAvaliable() const
+bool AVOutput::isAvailable() const
 {
-    return d_func()->avaliable;
+    return d_func()->available;
 }
 
-void AVOutput::setAvaliable(bool avaliable)
+void AVOutput::setAvailable(bool avail)
 {
     DPTR_D(AVOutput);
-    d->avaliable = avaliable;
+    d->available = avail;
 }
 
 void AVOutput::pause(bool p)

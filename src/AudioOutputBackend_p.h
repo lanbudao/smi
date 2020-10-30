@@ -9,7 +9,9 @@ class AudioOutputBackendPrivate
 {
 public:
     AudioOutputBackendPrivate():
-        avaliable(true)
+        avaliable(true),
+        buffer_size(0),
+        buffer_count(0)
     {
 
     }
@@ -20,6 +22,8 @@ public:
 
     AudioFormat format;
     bool avaliable;
+    int buffer_size;
+    int buffer_count;
 };
 
 NAMESPACE_END

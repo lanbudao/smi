@@ -89,7 +89,7 @@ void OutputSet::sendVideoFrame(const VideoFrame &frame)
     std::list<AVOutput *>::iterator itor;
     for (itor = d->outputs.begin(); itor != d->outputs.end(); itor++) {
         VideoRenderer *renderer = static_cast<VideoRenderer *>(*itor);
-        if (!renderer->isAvaliable())
+        if (!renderer->isAvailable())
             continue;
         renderer->receive(frame);
     }

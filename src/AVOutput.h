@@ -15,8 +15,8 @@ class AVOutput
 public:
     virtual ~AVOutput();
 
-    bool isAvaliable() const;
-    void setAvaliable(bool avaliable);
+    bool isAvailable() const;
+    void setAvailable(bool avaliable);
     void pause(bool p);
     bool isPaused() const;
 

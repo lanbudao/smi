@@ -227,7 +227,7 @@ void AudioThread::run()
 		if (frame.serial() != d->packets.serial()) {
 			continue;
 		}
-        bool has_ao = ao && ao->isAvaliable();
+        bool has_ao = ao && ao->isAvailable();
         if (has_ao) {
             int wanted_samples = d->getWantedSamples(frame.samplePerChannel(), frame.format().sampleRate());
             resample->setWantedSamples(wanted_samples);

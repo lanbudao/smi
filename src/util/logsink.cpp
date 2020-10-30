@@ -266,13 +266,13 @@ LogSinkPrivate::~LogSinkPrivate()
     {
         // notify background thread befor the object detoryed.
         // FIXME: condMutex_ is lock dead sometimes
-        while (perConsumeBytes_ != 0) {
+        do {
             std::unique_lock<std::mutex> lock(condMutex_);
             threadSync_ = true;
             proceedCond_.notify_all();
             //hitEmptyCond_.wait(lock);
             hitEmptyCond_.wait_for(lock, std::chrono::microseconds(1));
-        }
+        } while (perConsumeBytes_ != 0);
     }
 
     {

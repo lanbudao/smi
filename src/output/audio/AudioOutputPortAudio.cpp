@@ -1,4 +1,5 @@
 #include "AudioOutputBackend.h"
+#include "AudioOutputBackend_p.h"
 #include "portaudio.h"
 #include "AVLog.h"
 #include "AudioFormat.h"
@@ -25,6 +26,7 @@ public:
 
     bool initialize();
     bool uninitialize();
+    BufferControl bufferControl() const;
     PaSampleFormat toPaSampleFormat(const AudioFormat::SampleFormat &format);
 
     bool open() PU_DECL_OVERRIDE;
@@ -43,6 +45,7 @@ static const AudioOutputBackendId AudioOutputBackendId_PortAudio = mkid::id32bas
 FACTORY_REGISTER(AudioOutputBackend, PortAudio, "PortAudio")
 
 AudioOutputPortAudio::AudioOutputPortAudio():
+    AudioOutputBackend(new AudioOutputBackendPrivate),
     stream_paras(nullptr),
     isInitialized(false),
     outputLatency(0.0),
@@ -187,4 +190,10 @@ bool AudioOutputPortAudio::write(const char *data, int size)
     return true;
 }
 
+AudioOutputBackend::BufferControl AudioOutputPortAudio::bufferControl() const
+{
+    return Blocking;
+}
+
 NAMESPACE_END
+

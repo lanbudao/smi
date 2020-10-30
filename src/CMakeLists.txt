@@ -73,6 +73,7 @@ if (EXISTS ${PORTAUDIO_DIR})
 endif()
 
 IF (WIN32)
+    list(APPEND EXTRA_DEFS -DFFPROC_HAVE_DSOUND=1)
     list(APPEND SOURCES output/audio/AudioOutputdsound.cpp)
 ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systens.")

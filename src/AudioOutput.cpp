@@ -101,7 +101,9 @@ public:
         support_mute(true),
         volume(1.0),
         volume_i(256),
-        support_volume(true)
+        support_volume(true),
+        buffers(kBufferCount),
+        features(0)
     {
 
     }
@@ -112,6 +114,8 @@ public:
             delete backend;
         }
     }
+
+    void tryVolume(float value);
 
     void updateScaleSamples()
     {
@@ -127,9 +131,27 @@ public:
     ResampleType resample_type;
     bool mute, support_mute;
     float volume; uint16_t volume_i; bool support_volume;
-
+    int buffers;
+    int features;
     scale_samples_func scale_samples;
 };
+
+void AudioOutputPrivate::tryVolume(float value)
+{
+    // if not open, try later
+    if (!available)
+        return;
+    //if (features & AudioOutput::SetVolume) {
+        support_volume = backend->setVolume(value);
+        //if (!qFuzzyCompare(backend->volume(), value))
+        //    sw_volume = true;
+        if (support_volume)
+            backend->setVolume(1.0); // TODO: partial software?
+    //}
+    //else {
+    //    support_volume = true;
+    //}
+}
 
 AudioOutput::AudioOutput():
     AVOutput(new AudioOutputPrivate)
@@ -166,9 +188,12 @@ bool AudioOutput::open()
     if (!d->backend)
         return false;
     d->backend->setFormat(d->format);
+    d->backend->setBufferSize(bufferSize());
+    d->backend->setBufferCount(d->buffers);
     if (!d->backend->open())
         return false;
     d->available = true;
+    d->tryVolume(volume());
     return true;
 }
 
@@ -351,7 +376,29 @@ bool AudioOutput::receiveData(const char* data, int size, double pts)
             d->scale_samples(dst, dst, nb_samples, d->volume_i, volume());
         }
     }
+    if (!waitForNextBuffer()) { // TODO: wait or not parameter, set by user (async)
+        AVWarning("ao backend maybe not open\n");
+        //d->resetStatus();
+        return false;
+    }
     return d->backend->write(queue_data.constData(), size);
+}
+
+bool AudioOutput::waitForNextBuffer()
+{
+    DPTR_D(AudioOutput);
+
+    const AudioOutputBackend::BufferControl f = d->backend->bufferControl();
+    int remove = 0;
+    //const AudioOutputPrivate::FrameInfo &fi(d.frame_infos.front());
+    if (f & AudioOutputBackend::Blocking) {
+        remove = 1;
+    }
+    else if (f & AudioOutputBackend::CountCallback) {
+        d->backend->acquireNextBuffer();
+        remove = 1;
+    }
+    return true;
 }
 
 NAMESPACE_END

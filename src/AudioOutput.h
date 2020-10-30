@@ -16,7 +16,13 @@ public:
     ~AudioOutput();
 
     static std::vector<std::string> backendsAvailable();
-
+    //enum DeviceFeature {
+    //    NoFeature = 0,
+    //    SetVolume = 1, /// Use backend volume control api rather than software scale. Ignore if backend does not support.
+    //    SetMute = 1 << 1,
+    //    SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
+    //    SetSpeed = 1 << 3,  /// NOT IMPLEMENTED
+    //};
     bool open();
     bool isOpen() const;
     bool close();
@@ -40,6 +46,7 @@ public:
     void setMute(bool m);
 
     bool receiveData(const char* data, int size, double pts);
+    bool waitForNextBuffer();
 
 private:
 

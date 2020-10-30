@@ -13,7 +13,7 @@ class AVOutputPrivate
 {
 public:
     AVOutputPrivate():
-        avaliable(true),
+        available(true),
         pause(false),
         media_info(nullptr)
     {
@@ -24,7 +24,7 @@ public:
 
     }
 
-    bool avaliable;
+    bool available;
     bool pause;
     MediaInfo *media_info;
     VideoFrame current_frame;
