@@ -5,6 +5,7 @@
 
 NAMESPACE_BEGIN
 
+class AudioFrame;
 class AudioThreadPrivate;
 class AudioThread: public AVThread
 {
@@ -18,6 +19,7 @@ public:
 
 protected:
     void run() PU_DECL_OVERRIDE;
+    void applyFilters(AudioFrame* frame);
 
 private:
 };

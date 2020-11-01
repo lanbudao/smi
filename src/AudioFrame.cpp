@@ -86,6 +86,11 @@ int64_t AudioFrame::duration() {
     return d->format.durationForBytes(d->data.size());
 }
 
+void AudioFrame::setFormat(const AudioFormat & f)
+{
+    d_func()->setFormat(f);
+}
+
 AudioFormat AudioFrame::format() const {
     DPTR_D(const AudioFrame);
     return d->format;

@@ -22,6 +22,7 @@ public:
 
     int64_t duration();
 
+    void setFormat(const AudioFormat& f);
     AudioFormat format() const;
 
     int samplePerChannel() const;

@@ -36,7 +36,11 @@ public:
         packets.clear();
     }
 
-    virtual ~AVThreadPrivate() {}
+    virtual ~AVThreadPrivate() 
+    {
+        std::unique_lock<std::mutex> lock(mutex);
+        filters.clear();
+    }
 
     void addTask(Runnable *task) {
         tasks.push_back(task);

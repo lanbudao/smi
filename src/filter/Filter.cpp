@@ -70,4 +70,9 @@ void AudioFilter::installTo(Player *player)
     player->installFilter(this);
 }
 
+void AudioFilter::apply(MediaInfo * info, AudioFrame * frame)
+{
+    process(info, frame);
+}
+
 NAMESPACE_END

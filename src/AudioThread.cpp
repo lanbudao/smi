@@ -229,6 +229,7 @@ void AudioThread::run()
 		}
         bool has_ao = ao && ao->isAvailable();
         if (has_ao) {
+            applyFilters(&frame);
             int wanted_samples = d->getWantedSamples(frame.samplePerChannel(), frame.format().sampleRate());
             resample->setWantedSamples(wanted_samples);
             if (resample->speed() != clock->speed()) {
@@ -304,4 +305,20 @@ void AudioThread::run()
     CThread::run();
 }
 
+void AudioThread::applyFilters(AudioFrame * frame)
+{
+    DPTR_D(AudioThread);
+    if (!d->filters.empty()) {
+        //sort filters by format. vo->defaultFormat() is the last
+        for (std::list<Filter*>::iterator it = d->filters.begin();
+            it != d->filters.end(); ++it) {
+            AudioFilter *af = static_cast<AudioFilter*>(*it);
+            if (!af->enabled())
+                continue;
+            af->apply(nullptr, frame);
+        }
+    }
+}
+
 NAMESPACE_END
+

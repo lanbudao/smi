@@ -97,6 +97,7 @@ public:
     void addVideoRenderer(VideoRenderer *renderer);
     void resizeWindow(int w, int h);
 
+    /* Filter below */
     void installFilter(AudioFilter *filter);
     void installFilter(VideoFilter *filter);
 
@@ -107,6 +108,7 @@ public:
     void removeExternalSubtitle(Subtitle *sub);
     std::list<Subtitle*> externalSubtitles();
 
+    /* Call back */
     void setBufferProcessCallback(std::function<void(float p)> f);
     void setMediaStatusCallback(std::function<void(MediaStatus)> f);
 

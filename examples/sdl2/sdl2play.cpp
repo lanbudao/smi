@@ -2,6 +2,7 @@
 #include <iostream>
 #include "sdk/player.h"
 #include "sdk/AVLog.h"
+#include "sdk/filter/LibAVFilter.h"
 #include "SDL.h"
 
 using namespace FFPROC;
@@ -67,6 +68,11 @@ int main(int argc, char *argv[])
     //player->setResampleType(ResampleSoundtouch);
     //player->setSpeed(2.0);
     player->prepare();
+    
+    /* filter test */
+    LibAVFilterAudio* afilter = new LibAVFilterAudio;
+    afilter->setOptions("afade=t=in:ss=0:d=5");
+    player->installFilter(afilter);
 
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");
@@ -139,6 +145,7 @@ int main(int argc, char *argv[])
         }
     }
     delete player;
+    delete afilter;
     SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
     AVDebug("player uninitialize\n");

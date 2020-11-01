@@ -9,6 +9,7 @@ class AVClock;
 class OutputSet;
 class PacketQueue;
 class AVDecoder;
+class Filter;
 class AVThreadPrivate;
 class AVThread: public CThread
 {
@@ -35,6 +36,10 @@ public:
     void setSeeking(bool s);
 
     void waitAndCheck(int ms);
+
+    bool installFilter(Filter *filter, int index = 0x7FFFFFFF, bool lock = true);
+    bool uninstallFilter(Filter *filter, bool lock = true);
+    const std::list<Filter *> &filters() const;
 
 protected:
     AVThread(const char* title, AVThreadPrivate *d);
