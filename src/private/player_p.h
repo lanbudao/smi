@@ -85,6 +85,8 @@ public:
 
 	void updateBufferValue(PacketQueue* buf);
 
+    bool installFilter(AudioFilter* f, int index);
+
     void onSeekFinished(void*) { seeking = false; }
 
     std::string url;
@@ -122,6 +124,10 @@ public:
     /*Subtitles*/
     Subtitle internal_subtitle;
     std::list<Subtitle*> external_subtitles;
+
+    /* filters*/
+    std::list<Filter*> audio_filters;
+    std::list<Filter*> video_filters;
 
     MediaInfo mediainfo;
 
@@ -224,6 +230,7 @@ bool PlayerPrivate::setupAudioThread()
 		audio_output_set.addOutput(ao);
 		audio_thread->setOutputSet(&audio_output_set);
 		audio_thread->setClock(&clock);
+        audio_thread->updateFilters(audio_filters);
         clock.init(SyncToAudio, audio_thread->packets()->serialAddr());
 		demux_thread->setAudioThread(audio_thread);
 	}    
@@ -295,6 +302,30 @@ void PlayerPrivate::updateBufferValue(PacketQueue* buf)
     buf->setRealTime(demuxer->isRealTime());
 	buf->setBufferMode((BufferMode)buffer_mode);
 	buf->setBufferValue(buffer_value < 0LL ? bv : buffer_value);
+}
+
+bool PlayerPrivate::installFilter(AudioFilter * filter, int index)
+{
+    int p = index;
+    if (p < 0)
+        p += audio_filters.size();
+    if (p < 0)
+        p = 0;
+    if (p > audio_filters.size())
+        p = audio_filters.size();
+    std::list<Filter*>::iterator it_dst2;
+    std::list<Filter*>::iterator it_dst = audio_filters.begin();
+    while (--p >= 0) {
+        it_dst++;
+    }
+    std::list<Filter*>::iterator it_src = std::find(audio_filters.begin(), audio_filters.end(), filter);
+    if ((it_dst == it_src) && !audio_filters.empty())
+        return true;
+    audio_filters.remove(filter);
+    audio_filters.insert(it_dst, filter);
+    if (audio_thread)
+        audio_thread->updateFilters(audio_filters);
+    return true;
 }
 
 NAMESPACE_END

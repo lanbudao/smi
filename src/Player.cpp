@@ -273,12 +273,10 @@ void Player::resizeWindow(int w, int h)
     }
 }
 
-void Player::installFilter(AudioFilter *filter)
+bool Player::installFilter(AudioFilter *filter, int index)
 {
     DPTR_D(Player);
-    if (d->audio_thread) {
-        d->audio_thread->installFilter(filter);
-    }
+    return d->installFilter(filter, index);
 }
 
 void Player::installFilter(VideoFilter *filter)

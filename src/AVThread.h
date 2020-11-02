@@ -37,8 +37,7 @@ public:
 
     void waitAndCheck(int ms);
 
-    bool installFilter(Filter *filter, int index = 0x7FFFFFFF, bool lock = true);
-    bool uninstallFilter(Filter *filter, bool lock = true);
+    void updateFilters(const std::list<Filter*> filters);
     const std::list<Filter *> &filters() const;
 
 protected:

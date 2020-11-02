@@ -98,7 +98,7 @@ public:
     void resizeWindow(int w, int h);
 
     /* Filter below */
-    void installFilter(AudioFilter *filter);
+    bool installFilter(AudioFilter *filter, int index = 0x7FFFFFFF);
     void installFilter(VideoFilter *filter);
 
     std::map<std::string, std::string> internalSubtitles() const;

@@ -106,47 +106,11 @@ void AVThread::waitAndCheck(int ms)
     }
 }
 
-bool AVThread::installFilter(Filter *filter, int index, bool lock)
+void AVThread::updateFilters(const std::list<Filter*> filters)
 {
     DPTR_D(AVThread);
-    int p = index;
-    if (p < 0)
-        p += d->filters.size();
-    if (p < 0)
-        p = 0;
-    if (p > d->filters.size())
-        p = d->filters.size();
-    std::list<Filter*>::iterator it_dst2;
-    std::list<Filter*>::iterator it_dst = d->filters.begin();
-    while (--p >= 0) {
-        it_dst++;
-    }
-    std::list<Filter*>::iterator it_src = std::find(d->filters.begin(), d->filters.end(), filter);
-    if ((it_dst == it_src) && !d->filters.empty())
-        return true;
-    if (lock) {
-        std::unique_lock<std::mutex> lock_mtx(d->mutex);
-        d->filters.remove(filter);
-        d->filters.insert(it_dst, filter);
-    }
-    else {
-        d->filters.remove(filter);
-        d->filters.insert(it_dst, filter);
-    }
-    return true;
-}
-
-bool AVThread::uninstallFilter(Filter *filter, bool lock)
-{
-    DPTR_D(AVThread);
-    if (lock) {
-        std::unique_lock<std::mutex> lock_mtx(d->mutex);
-        d->filters.remove(filter);
-    }
-    else {
-        d->filters.remove(filter);
-    }
-    return true;
+    std::unique_lock<std::mutex> lock_mtx(d->mutex);
+    d->filters = filters;
 }
 
 const std::list<Filter*>& AVThread::filters() const
