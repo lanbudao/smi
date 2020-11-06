@@ -25,6 +25,7 @@ public:
     virtual std::string description() const = 0;
 
     virtual bool open(const string &extra = string());
+    virtual void onOpen() {}
     virtual bool close();
 
     bool isOpen();

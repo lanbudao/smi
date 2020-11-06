@@ -75,7 +75,7 @@ void VideoFrame::setData(void *data)
     av_frame_move_ref(d->frame, f);
     setBits(d->frame->data);
     setBytesPerLine(d->frame->linesize);
-    setTimestamp(static_cast<double>(d->frame->pts) / 1000.0);
+    //setTimestamp(static_cast<double>(d->frame->pts) / 1000.0);
     setPos(d->frame->pkt_pos);
 }
 

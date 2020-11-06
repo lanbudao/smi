@@ -6,6 +6,7 @@
 #include "Filter.h"
 
 typedef struct AVFrame AVFrame;
+typedef struct AVFilterContext AVFilterContext;
 NAMESPACE_BEGIN
 
 class Frame;
@@ -38,10 +39,9 @@ protected:
     virtual std::string sourceArguments() const = 0;
     bool putFrame(Frame* frame, bool changed);
     bool getFrame();
-    AVFrame* frame();
-    void* pullFrameHolder();
+    void* getFrameHolder();
 
-private:
+protected:
     LibAVFilterPrivate* priv;
 };
 

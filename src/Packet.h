@@ -14,11 +14,15 @@ class Packet
 {
     DPTR_DECLARE_PRIVATE(Packet)
 public:
+    enum Type {
+        Data, Eof, Flush
+    };
     Packet();
     ~Packet();
     Packet(const Packet& other);
     Packet &operator = (const Packet &other);
 
+    Type type;
     const AVPacket *asAVPacket() const;
 
     static Packet fromAVPacket(const AVPacket *packet, double time_base);
@@ -32,7 +36,9 @@ public:
     bool containKeyFrame, isCorrupted;
     double pts, dts, duration;
     int64_t pos;
-    ByteArray data;
+    //ByteArray data;
+    std::string attach;
+    int size;
     mutable int serial;
 
     AVPacket *avpacket();
@@ -43,9 +49,10 @@ private:
 
 bool Packet::isValid() const
 {
-    if (data.isEmpty())
-        return false;
-    return !isCorrupted && data.size() > 0 && pts >= 0 && duration >= 0;
+    //if (data.isEmpty())
+    //    return false;
+    //return !isCorrupted && data.size() > 0 && pts >= 0 && duration >= 0;
+    return !isCorrupted && size > 0 && pts >= 0 && duration >= 0;
 }
 
 NAMESPACE_END

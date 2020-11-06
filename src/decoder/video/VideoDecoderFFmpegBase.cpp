@@ -66,7 +66,10 @@ VideoFrame VideoDecoderFFmpegBase::frame()
     VideoFrame frame(d->frame->width, d->frame->height, format);
     frame.setDisplayAspectRatio(d->getDisplayAspectRatio(d->frame));
     frame.setDuration(d->getVideoFrameDuration());
-//    frame.setBits(d->frame->data);
+    //    frame.setBits(d->frame->data);
+    double time_stamp = (d->frame->pts == AV_NOPTS_VALUE) ?
+        NAN : d->frame->pts * av_q2d(d->codec_ctx->pkt_timebase);
+    frame.setTimestamp(time_stamp);
     frame.setData(d->frame);
 //    frame.setBytesPerLine(d->frame->linesize);
 //    frame.setTimestamp((double)d->frame->pts / 1000.0);

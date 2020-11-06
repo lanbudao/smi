@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     /* filter test */
     LibAVFilterAudio* afilter = new LibAVFilterAudio;
     afilter->setOptions("afade=t=in:ss=0:d=5");
-    player->installFilter(afilter);
+    //player->installFilter(afilter);
 
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");

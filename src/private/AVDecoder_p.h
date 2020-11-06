@@ -30,7 +30,8 @@ public:
         fmt_ctx(nullptr),
 //        stream_index(-1),
         decoder_reorder_pts(false),
-        current_stream(nullptr)
+        current_stream(nullptr),
+        start_pts(AV_NOPTS_VALUE)
     {
         avcodec_register_all();
         codec_ctx = avcodec_alloc_context3(nullptr);
@@ -67,6 +68,11 @@ public:
 //    int stream_index;
     bool decoder_reorder_pts;
     AVStream* current_stream;
+
+    int64_t start_pts;
+    AVRational start_pts_tb;
+    int64_t next_pts;
+    AVRational next_pts_tb;
 };
 
 class VideoDecoderPrivate: public AVDecoderPrivate

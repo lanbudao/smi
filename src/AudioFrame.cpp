@@ -71,7 +71,7 @@ void AudioFrame::setData(void *data)
     setBits(d->frame->extended_data);
     setBytesPerLine(d->frame->linesize[0], 0);
     setSamplePerChannel(d->frame->nb_samples);
-    setTimestamp(static_cast<double>(d->frame->pts) / 1000.0);
+    //setTimestamp(static_cast<double>(d->frame->pts) / 1000.0);
 }
 
 int AudioFrame::channelCount() const {

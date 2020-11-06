@@ -78,6 +78,19 @@ AudioFrame AudioDecoderFFmpeg::frame()
     DPTR_D(AudioDecoderFFmpeg);
 
     AudioFrame f;
+
+    // Set timestamp
+    AVRational tb = { 1, d->frame->sample_rate };
+    if (d->frame->pts != AV_NOPTS_VALUE)
+        d->frame->pts = av_rescale_q(d->frame->pts, d->codec_ctx->pkt_timebase, tb);
+    else if (d->next_pts != AV_NOPTS_VALUE)
+        d->frame->pts = av_rescale_q(d->next_pts, d->next_pts_tb, tb);
+    if (d->frame->pts != AV_NOPTS_VALUE) {
+        d->next_pts = d->frame->pts + d->frame->nb_samples;
+        d->next_pts_tb = tb;
+    }
+    double time_stamp = (d->frame->pts == AV_NOPTS_VALUE) ? NAN : d->frame->pts * av_q2d(tb);
+    f.setTimestamp(time_stamp);
     f.setData(d->frame);
     return f;
 }

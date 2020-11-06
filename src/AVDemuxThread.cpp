@@ -303,15 +303,14 @@ void AVDemuxThread::run()
                     d->video_thread->pause(d->last_paused);
             }
         }
-        //if (d->packetsFull()) {
+        audio_has_pic = demuxer->hasAttachedPic();
 		if ((!abuffer || (abuffer && abuffer->checkFull())/* || (abuffer->duration() > 1.0)*/) &&
-			(!vbuffer || (vbuffer && vbuffer->checkFull())/* || (vbuffer->duration() > 1.0)*/)) {
+			(!(vbuffer && !audio_has_pic) || (vbuffer && vbuffer->checkFull())/* || (vbuffer->duration() > 1.0)*/)) {
 			/* wait 10 ms */
 			std::unique_lock<std::mutex> lock(d->wait_mutex);
 			d->continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
 			continue;
 		}
-        audio_has_pic = demuxer->hasAttachedPic();
         ret = demuxer->readFrame();
         if (ret < 0) {
             if (ret == AVERROR_EOF && !d->eof) {

@@ -26,12 +26,13 @@ public:
 
 Packet::Packet():
     d_ptr(new PacketPrivate),
+    type(Packet::Data),
     containKeyFrame(false),
     isCorrupted(false),
-    pts(-1),
-    dts(-1),
-    duration(-1),
-    pos(-1),
+    pts(0),
+    dts(0),
+    duration(0),
+    pos(0),
     serial(-1)
 {
 
@@ -45,13 +46,16 @@ Packet::~Packet()
 Packet::Packet(const Packet &other)
 {
     d_ptr = other.d_ptr;
+    type = other.type;
     containKeyFrame = other.containKeyFrame;
     isCorrupted = other.isCorrupted;
     pts = other.pts;
     duration = other.duration;
     dts = other.dts;
     pos = other.pos;
-    data = other.data;
+    //data = other.data;
+    attach = other.attach;
+    size = other.size;
     serial = other.serial;
 }
 
@@ -60,13 +64,16 @@ Packet &Packet::operator =(const Packet &other)
     if (this == &other)
         return *this;
     d_ptr = other.d_ptr;
+    type = other.type;
     containKeyFrame = other.containKeyFrame;
     isCorrupted = other.isCorrupted;
     pts = other.pts;
     duration = other.duration;
     dts = other.dts;
     pos = other.pos;
-    data = other.data;
+    //data = other.data;
+    attach = other.attach;
+    size = other.size;
     serial = other.serial;
     return *this;
 }
@@ -78,7 +85,7 @@ Packet Packet::fromAVPacket(const AVPacket *packet, double time_base)
     pkt.pos = packet->pos;
     pkt.containKeyFrame = !!(packet->flags & AV_PKT_FLAG_KEY);
     pkt.isCorrupted = !!(packet->flags & AV_PKT_FLAG_CORRUPT);
-
+    pkt.type = Packet::Data;
     /*Set pts*/
     if (packet->pts != AV_NOPTS_VALUE) {
         pkt.pts = packet->pts * time_base;
@@ -104,43 +111,50 @@ Packet Packet::fromAVPacket(const AVPacket *packet, double time_base)
     pkt.duration = packet->duration * time_base;
     if (pkt.duration < 0)
         pkt.duration = 0;
+    pkt.size = packet->size;
 
     AVPacket *p = pkt.avpacket();
     av_packet_ref(p, packet);  //properties are copied internally
-    p->pts = int64_t(pkt.pts * 1000.0);
-    p->dts = int64_t(pkt.dts * 1000.0);
-    p->duration = int(pkt.duration * 1000.0);
+    //p->pts = int64_t(pkt.pts * 1000.0);
+    //p->dts = int64_t(pkt.dts * 1000.0);
+    //p->duration = int(pkt.duration * 1000.0);
 
-    pkt.data.setData((char*)p->data, p->size);
+    //pkt.data.setData((char*)p->data, p->size);
 
     return pkt;
 }
 
 bool Packet::isEOF() const
 {
-    if (data.isEmpty())
-        return false;
-    return !memcmp(data.constData(), "eof", data.size()) && pts < 0.0 && dts < 0.0;
+    //if (data.isEmpty())
+    //    return false;
+    //return !memcmp(data.constData(), "eof", data.size()) && pts < 0.0 && dts < 0.0;    if (data.isEmpty())
+    return type == Packet::Eof;
 }
 
 Packet Packet::createEOF()
 {
     static Packet pkt;
-    pkt.data = ByteArray("eof");
+    //pkt.data = ByteArray("eof");
+    pkt.attach = "eof";
+    pkt.type = Packet::Eof;
     return pkt;
 }
 
 bool Packet::isFlush() const
 {
-    if (data.isEmpty())
-        return false;
-    return !memcmp(data.constData(), "flush", data.size()) && pts < 0.0 && dts < 0.0;
+    //if (data.isEmpty())
+    //    return false;
+    //return !memcmp(data.constData(), "flush", data.size()) && pts < 0.0 && dts < 0.0;
+    return type == Packet::Flush;
 }
 
 Packet Packet::createFlush()
 {
     static Packet pkt;
-    pkt.data = ByteArray("flush");
+    //pkt.data = ByteArray("flush");
+    pkt.attach = "flush";
+    pkt.type = Packet::Flush;
     return pkt;
 }
 
@@ -154,18 +168,18 @@ const AVPacket *Packet::asAVPacket() const
 {
     DPTR_D(const Packet);
     AVPacket *p = &d->avpkt;
-    p->pts = int64_t(pts * 1000.0);
-    p->dts = int64_t(dts * 1000.0);
-    p->duration = int(duration * 1000.0);
-    p->pos = pos;
-    if (isCorrupted)
-        p->flags |= AV_PKT_FLAG_CORRUPT;
-    if (containKeyFrame)
-        p->flags |= AV_PKT_FLAG_KEY;
-    if (!data.isEmpty()) {
-        p->data = (uint8_t *)data.constData();
-        p->size = data.size();
-    }
+    //p->pts = int64_t(pts * 1000.0);
+    //p->dts = int64_t(dts * 1000.0);
+    //p->duration = int(duration * 1000.0);
+    //p->pos = pos;
+    //if (isCorrupted)
+    //    p->flags |= AV_PKT_FLAG_CORRUPT;
+    //if (containKeyFrame)
+    //    p->flags |= AV_PKT_FLAG_KEY;
+    //if (!data.isEmpty()) {
+    //    p->data = (uint8_t *)data.constData();
+    //    p->size = data.size();
+    //}
     return p;
 }
 

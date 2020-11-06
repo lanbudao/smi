@@ -171,7 +171,10 @@ bool PacketQueue::checkEnough() const
 
 bool PacketQueue::checkFull() const
 {
-	return buffered() >= int64_t(bufferValue() * bufferMax());
+    //int64_t buffer = buffered();
+    //int64_t default = int64_t(bufferValue() * bufferMax());
+    bool full = buffered() >= int64_t(bufferValue() * bufferMax());
+	return full;
 }
 
 void PacketQueue::onEnqueue(const Packet & pkt)
@@ -186,16 +189,16 @@ void PacketQueue::onEnqueue(const Packet & pkt)
 	}
 	pkt.serial = d->serial;
 
-    if (pkt.isFlush())
+    if (pkt.isFlush() || pkt.isEOF())
         return;
 	if (d->mode == BufferTime) {
-		d->value1 = int64_t(pkt.pts*1000.0); // FIXME: what if no pts
+		d->value1 = int64_t(pkt.pts * 1000.0); // FIXME: what if no pts
 		d->value0 = q.size() > 0 ? int64_t(q.front().pts * 1000.0) : d->value1; // must compute here because it is reset to 0 if take from empty
 		//if (isBuffering())
 		  //  qDebug("+buffering progress: %.1f%%=%.1f/%.1f~%.1fs %d-%d", bufferProgress()*100.0, (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0, qreal(bufferValue())*bufferMax()/1000.0, m_value1, m_value0);
 	}
 	else if (d->mode == BufferBytes) {
-		d->value1 += pkt.data.size();
+        d->value1 += pkt.size;
 	}
 	else {
 		d->value1++;
@@ -208,7 +211,7 @@ void PacketQueue::onEnqueue(const Packet & pkt)
 		d->buffering = false;
 	}
 	BufferInfo info;
-    info.bytes = pkt.data.size();
+    info.bytes = pkt.size;
 	if (!d->record.empty())
         info.bytes += d->record.back().bytes;
     info.v = d->value1;
@@ -236,7 +239,7 @@ void PacketQueue::onDequeue(const Packet & pkt)
 		  //  qDebug("-buffering progress: %.1f=%.1f/%.1fs", bufferProgress(), (qreal)buffered()/1000.0, (qreal)bufferValue()/1000.0);
 	}
 	else if (d->mode == BufferBytes) {
-		d->value1 -= pkt.data.size();
+		d->value1 -= pkt.size;
 		d->value1 = std::max<int64_t>(0LL, d->value1);
 	}
 	else {

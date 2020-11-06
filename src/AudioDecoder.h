@@ -15,6 +15,8 @@ class AudioDecoder: public AVDecoder
 public:
     ~AudioDecoder() PU_DECL_OVERRIDE;
 
+    void onOpen() override;
+
     static StringList supportedCodecs();
 
     virtual std::string name() const PU_DECL_OVERRIDE;

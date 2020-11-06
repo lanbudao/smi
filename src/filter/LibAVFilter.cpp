@@ -62,12 +62,10 @@ public:
     ~LibAVFilterPrivate()
     {
         avfilter_graph_free(&filter_graph);
-#if !AV_FRAME_REF
         if (av_frame) {
             av_frame_free(&av_frame);
             av_frame = nullptr;
         }
-#endif
     }
     bool setup(const std::string &args, bool is_video);
 
@@ -82,12 +80,10 @@ public:
 
 bool LibAVFilterPrivate::setup(const std::string &args, bool is_video)
 {
-#if !AV_FRAME_REF
     if (av_frame) {
         av_frame_free(&av_frame);
         av_frame = nullptr;
     }
-#endif
     status = LibAVFilter::ConfigureFailed;
 
     avfilter_graph_free(&filter_graph);
@@ -138,9 +134,7 @@ bool LibAVFilterPrivate::setup(const std::string &args, bool is_video)
     //avfilter_graph_parse, avfilter_graph_parse2?
     AV_ENSURE_OK(avfilter_graph_parse_ptr(filter_graph, options.data(), &inputs, &outputs, NULL), false);
     AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
-#if !AV_FRAME_REF
     av_frame = av_frame_alloc();
-#endif
     status = LibAVFilter::ConfigureOk;
     return true;
 }
@@ -176,39 +170,15 @@ LibAVFilter::Status LibAVFilter::status() const
 
 bool LibAVFilter::putFrame(Frame * frame, bool changed)
 {
-    if (priv->status == LibAVFilter::NotConfigured ||
-#if !AV_FRAME_REF
-        !priv->av_frame ||
-#endif
-        changed) {
+    if (priv->status == LibAVFilter::NotConfigured || !priv->av_frame || changed) {
         if (!priv->setup(sourceArguments(), false)) {
             AVWarning("setup audio filter graph error\n");
             return false;
         }
     }
-#if AV_FRAME_REF
-    // use av_frame_move_ref?
-    priv->av_frame = frame->frame();
-    // Or use av_buffersrc_write_frame
+    av_frame_ref(priv->av_frame, frame->frame());
     AV_ENSURE_OK(av_buffersrc_write_frame(priv->in_filter_ctx, priv->av_frame), false);
-#else
-    AudioFrame *af = static_cast<AudioFrame*>(frame);
-    const AudioFormat afmt(af->format());
-    priv->av_frame->pts = frame->timestamp() * 1000000.0; // time_base is 1/1000000
-    priv->av_frame->sample_rate = afmt.sampleRate();
-    priv->av_frame->channel_layout = afmt.channelLayoutFFmpeg();
-#if FFPRO_USE_FFMPEG(LIBAVCODEC) || FFPRO_USE_FFMPEG(LIBAVUTIL) //AVFrame was in avcodec
-    priv->av_frame->channels = afmt.channels(); //MUST set because av_buffersrc_write_frame will compare channels and layout
-#endif
-    priv->av_frame->format = (AVSampleFormat)afmt.sampleFormatFFmpeg();
-    priv->av_frame->nb_samples = af->samplePerChannel();
-    for (int i = 0; i < af->planeCount(); ++i) {
-        //avframe->data[i] = (uint8_t*)af->constBits(i);
-        priv->av_frame->extended_data[i] = (uint8_t*)af->constBits(i);
-        priv->av_frame->linesize[i] = af->bytesPerLine(i);
-    }
-    AV_ENSURE_OK(av_buffersrc_write_frame(priv->in_filter_ctx, priv->av_frame), false);
-#endif
+    av_frame_unref(priv->av_frame);
     return true;
 }
 
@@ -222,12 +192,7 @@ bool LibAVFilter::getFrame()
     return true;
 }
 
-AVFrame* LibAVFilter::frame()
-{
-    return priv->av_frame;
-}
-
-void * LibAVFilter::pullFrameHolder()
+void * LibAVFilter::getFrameHolder()
 {
 #if FFPROC_HAVE_AVFILTER
     AVFrameHolder *holder = NULL;
@@ -275,13 +240,13 @@ LibAVFilterAudio::~LibAVFilterAudio()
 
 }
 
-void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * audio_frame)
+void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
 {
     if (status() == ConfigureFailed)
         return;
     DPTR_D(LibAVFilterAudio);
     bool changed = false;
-    const AudioFormat afmt(audio_frame->format());
+    const AudioFormat afmt(aframe->format());
     if (d->sample_rate != afmt.sampleRate() ||
         d->sample_fmt != afmt.sampleFormatFFmpeg() ||
         d->channel_layout != afmt.channelLayoutFFmpeg()) {
@@ -290,33 +255,9 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * audio_frame)
         d->sample_fmt = (AVSampleFormat)afmt.sampleFormatFFmpeg();
         d->channel_layout = afmt.channelLayoutFFmpeg();
     }
-#if AV_FRAME_REF
-    if (!putFrame(audio_frame, changed))
+    if (!putFrame(aframe, changed))
         return;
-    if (!getFrame())
-        return;
-    const AVFrame *f = frame();
-    AudioFormat fmt;
-    fmt.setSampleFormatFFmpeg(f->format);
-    fmt.setChannelLayoutFFmpeg(f->channel_layout);
-    fmt.setSampleRate(f->sample_rate);
-    if (!fmt.isValid()) {// need more data to decode to get a frame
-        return;
-    }
-    audio_frame->setFormat(fmt);
-    audio_frame->setBits(f->extended_data); // TODO: ref
-    audio_frame->setBytesPerLine(f->linesize[0], 0); // for correct alignment
-    audio_frame->setSamplePerChannel(f->nb_samples);
-    //af.setMetaData("avframe_hoder_ref", QVariant::fromValue(ref));
-    audio_frame->setTimestamp(f->pts / 1000000.0); //pkt_pts?
-#else
-    bool ok = putFrame(audio_frame, changed);
-    //if (old != status())
-      //  emit statusChanged();
-    if (!ok)
-        return;
-
-    AVFrameHolderRef ref((AVFrameHolder*)pullFrameHolder());
+    AVFrameHolderRef ref((AVFrameHolder*)getFrameHolder());
     if (!ref)
         return;
     const AVFrame *f = ref->frame();
@@ -327,14 +268,12 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * audio_frame)
     if (!fmt.isValid()) {// need more data to decode to get a frame
         return;
     }
-    AudioFrame af(fmt);
-    af.setBits(f->extended_data); // TODO: ref
-    af.setBytesPerLine(f->linesize[0], 0); // for correct alignment
-    af.setSamplePerChannel(f->nb_samples);
-    //af.setMetaData(QStringLiteral("avframe_hoder_ref"), QVariant::fromValue(ref));
-    af.setTimestamp(ref->frame()->pts / 1000000.0); //pkt_pts?
-    *audio_frame = af;
-#endif
+    aframe->setFormat(fmt);
+    aframe->setBits(f->extended_data);
+    aframe->setBytesPerLine(f->linesize[0], 0);
+    aframe->setSamplePerChannel(f->nb_samples);
+    AVRational tb = av_buffersink_get_time_base(priv->out_filter_ctx);
+    aframe->setTimestamp(f->pts == AV_NOPTS_VALUE ? NAN : f->pts * av_q2d(tb));
 }
 
 std::string LibAVFilterAudio::sourceArguments() const
@@ -342,7 +281,7 @@ std::string LibAVFilterAudio::sourceArguments() const
     DPTR_D(const LibAVFilterAudio);
     std::string args;
     stringstream ss;
-    ss << "time_base=1/" << AV_TIME_BASE;
+    ss << "time_base=1/" << d->sample_rate;
     ss << ":sample_rate=" << d->sample_rate;
     ss << ":sample_fmt=" << d->sample_fmt;
     ss << ":channel_layout=0x" << std::hex << d->channel_layout;

@@ -18,6 +18,16 @@ AudioDecoder::~AudioDecoder()
 
 }
 
+void AudioDecoder::onOpen()
+{
+    DPTR_D(AudioDecoder);
+    if ((d->fmt_ctx->iformat->flags & (AVFMT_NOBINSEARCH | AVFMT_NOGENSEARCH | AVFMT_NO_BYTE_SEEK))
+        && !d->fmt_ctx->iformat->read_seek) {
+        d->start_pts = d->current_stream->start_time;
+        d->start_pts_tb = d->current_stream->time_base;
+    }
+}
+
 StringList AudioDecoder::supportedCodecs()
 {
     static StringList codecs;

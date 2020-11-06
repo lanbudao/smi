@@ -62,7 +62,11 @@ bool AVDecoder::open(const string &extra)
         return false;
     }
     d->opened = true;
+    // Set time_base
+    d->codec_ctx->pkt_timebase = d->current_stream->time_base;
+    d->codec_ctx->codec_id = codec->id;
     AV_RUN_CHECK(avcodec_open2(d->codec_ctx, codec, &d->dict), false);
+    onOpen();
     return true;
 }
 
@@ -87,6 +91,8 @@ bool AVDecoder::isOpen()
 void AVDecoder::flush()
 {
     DPTR_D(AVDecoder);
+    d->next_pts = d->start_pts;
+    d->next_pts_tb = d->start_pts_tb;
     d->flush();
 }
 
