@@ -176,10 +176,15 @@ bool LibAVFilter::putFrame(Frame * frame, bool changed)
             return false;
         }
     }
-    av_frame_ref(priv->av_frame, frame->frame());
-    AV_ENSURE_OK(av_buffersrc_write_frame(priv->in_filter_ctx, priv->av_frame), false);
-    av_frame_unref(priv->av_frame);
-    return true;
+    //av_frame_ref(priv->av_frame, frame->frame());
+    //AV_ENSURE_OK(av_buffersrc_write_frame(priv->in_filter_ctx, priv->av_frame), false);
+    //av_frame_unref(priv->av_frame);
+    /**
+     * If use av_buffersrc_write_frame, we must call av_frame_unref after write.
+     * because it will creates a new reference to the input frame.
+     */
+    AV_ENSURE_OK(av_buffersrc_add_frame(priv->in_filter_ctx, frame->frame()), false);
+    return true; 
 }
 
 bool LibAVFilter::getFrame()
@@ -257,10 +262,19 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
     }
     if (!putFrame(aframe, changed))
         return;
+#if 0
     AVFrameHolderRef ref((AVFrameHolder*)getFrameHolder());
     if (!ref)
         return;
     const AVFrame *f = ref->frame();
+#else
+    AVFrame* f = aframe->frame();
+    int ret = av_buffersink_get_frame(priv->out_filter_ctx, f);
+    if (ret < 0) {
+        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
+        return;
+    }
+#endif
     AudioFormat fmt;
     fmt.setSampleFormatFFmpeg(f->format);
     fmt.setChannelLayoutFFmpeg(f->channel_layout);
