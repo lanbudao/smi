@@ -72,6 +72,7 @@ void VideoFrame::setData(void *data)
 {
     DPTR_D(Frame);
     AVFrame* f = reinterpret_cast<AVFrame*>(data);
+    av_frame_unref(d->frame);
     av_frame_move_ref(d->frame, f);
     setBits(d->frame->data);
     setBytesPerLine(d->frame->linesize);

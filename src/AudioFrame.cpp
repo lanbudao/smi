@@ -61,6 +61,7 @@ void AudioFrame::setData(void *data)
 {
     DPTR_D(AudioFrame);
     AVFrame* f = reinterpret_cast<AVFrame*>(data);
+    av_frame_unref(d->frame);
     av_frame_move_ref(d->frame, f);
     AudioFormat fmt;
     fmt.setSampleFormatFFmpeg(d->frame->format);
