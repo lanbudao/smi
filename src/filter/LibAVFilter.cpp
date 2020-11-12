@@ -9,6 +9,7 @@ extern "C" {
 #include "libavfilter/avfilter.h"
 #include "libavfilter/buffersrc.h"
 #include "libavfilter/buffersink.h"
+#include "libavutil/avstring.h"
 }
 #include <assert.h>
 #include <sstream>
@@ -67,7 +68,7 @@ public:
             av_frame = nullptr;
         }
     }
-    bool setup(const std::string &args, bool is_video);
+    bool config(const std::string &args, bool is_video);
 
 public:
     AVFrame* av_frame;
@@ -78,7 +79,7 @@ public:
     AVFilterContext *out_filter_ctx;
 };
 
-bool LibAVFilterPrivate::setup(const std::string &args, bool is_video)
+bool LibAVFilterPrivate::config(const std::string &args, bool is_video)
 {
     if (av_frame) {
         av_frame_free(&av_frame);
@@ -168,10 +169,10 @@ LibAVFilter::Status LibAVFilter::status() const
     return priv->status;
 }
 
-bool LibAVFilter::putFrame(Frame * frame, bool changed)
+bool LibAVFilter::putFrame(Frame * frame, bool changed, bool is_video)
 {
     if (priv->status == LibAVFilter::NotConfigured || !priv->av_frame || changed) {
-        if (!priv->setup(sourceArguments(), false)) {
+        if (!priv->config(sourceArguments(), is_video)) {
             AVWarning("setup audio filter graph error\n");
             return false;
         }
@@ -245,10 +246,10 @@ LibAVFilterAudio::~LibAVFilterAudio()
 
 }
 
-void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
+bool LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
 {
     if (status() == ConfigureFailed)
-        return;
+        return false;
     DPTR_D(LibAVFilterAudio);
     bool changed = false;
     const AudioFormat afmt(aframe->format());
@@ -261,18 +262,18 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
         d->channel_layout = afmt.channelLayoutFFmpeg();
     }
     if (!putFrame(aframe, changed))
-        return;
+        return false;
 #if 0
     AVFrameHolderRef ref((AVFrameHolder*)getFrameHolder());
     if (!ref)
-        return;
+        return false;
     const AVFrame *f = ref->frame();
 #else
     AVFrame* f = aframe->frame();
     int ret = av_buffersink_get_frame(priv->out_filter_ctx, f);
     if (ret < 0) {
         AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
-        return;
+        return false;
     }
 #endif
     AudioFormat fmt;
@@ -280,7 +281,7 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
     fmt.setChannelLayoutFFmpeg(f->channel_layout);
     fmt.setSampleRate(f->sample_rate);
     if (!fmt.isValid()) {// need more data to decode to get a frame
-        return;
+        return false;
     }
     aframe->setFormat(fmt);
     aframe->setBits(f->extended_data);
@@ -288,6 +289,7 @@ void LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
     aframe->setSamplePerChannel(f->nb_samples);
     AVRational tb = av_buffersink_get_time_base(priv->out_filter_ctx);
     aframe->setTimestamp(f->pts == AV_NOPTS_VALUE ? NAN : f->pts * av_q2d(tb));
+    return true;
 }
 
 std::string LibAVFilterAudio::sourceArguments() const
@@ -303,6 +305,85 @@ std::string LibAVFilterAudio::sourceArguments() const
     return args;
 }
 
+/**
+ * @brief libavfiltervideo
+ */
+class LibAVFilterVideoPrivate : public VideoFilterPrivate
+{
+public:
+    LibAVFilterVideoPrivate()
+        : VideoFilterPrivate(),
+        format(AV_PIX_FMT_NONE),
+        width(0),
+        height(0)
+    {}
 
+    AVPixelFormat format;
+    int width, height;
+    Rational sample_aspect_ratio, time_base;
+    Rational frame_rate;
+};
+
+LibAVFilterVideo::LibAVFilterVideo() :
+    VideoFilter(new LibAVFilterVideoPrivate)
+{
+
+}
+
+LibAVFilterVideo::~LibAVFilterVideo()
+{
+
+}
+
+bool LibAVFilterVideo::process(MediaInfo * info, VideoFrame * vframe)
+{
+    if (status() == ConfigureFailed)
+        return false;
+    DPTR_D(LibAVFilterVideo);
+    bool changed = false;
+    if (d->width != vframe->width() || d->height != vframe->height() || d->format != vframe->pixelFormatFFmpeg()) {
+        changed = true;
+        d->width = vframe->width();
+        d->height = vframe->height();
+        d->format = (AVPixelFormat)vframe->pixelFormatFFmpeg();
+        if (info && info->video) {
+            d->sample_aspect_ratio = info->video->sample_aspect_ratio;
+            d->time_base = info->video->time_base;
+            d->frame_rate = info->video->frame_rate;
+        }
+    }
+    if (!putFrame(vframe, changed, true))
+        return false;
+    AVFrame* f = vframe->frame();
+    int ret = av_buffersink_get_frame(priv->out_filter_ctx, f);
+    if (ret < 0) {
+        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
+        return false;
+    }
+    vframe->setWidth(f->width);
+    vframe->setHeight(f->height);
+    vframe->setBits(f->data);
+    vframe->setFormat(VideoFormat(f->format));
+    vframe->setBytesPerLine((int*)f->linesize);
+    AVRational tb = av_buffersink_get_time_base(priv->out_filter_ctx);
+    vframe->setTimestamp(f->pts == AV_NOPTS_VALUE ? NAN : f->pts * av_q2d(tb));
+    return true;
+}
+
+std::string LibAVFilterVideo::sourceArguments() const
+{
+    DPTR_D(const LibAVFilterVideo);
+    std::string args;
+    char buffersrc_args[256];
+    snprintf(buffersrc_args, sizeof(buffersrc_args),
+        "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+        d->width, d->height, d->format,
+        d->time_base.num, d->time_base.den,
+        d->sample_aspect_ratio.num, FFMAX(d->sample_aspect_ratio.den, 1));
+    if (d->frame_rate.num && d->frame_rate.den)
+        av_strlcatf(buffersrc_args, sizeof(buffersrc_args), ":frame_rate=%d/%d", d->frame_rate.num, d->frame_rate.den);
+    args = buffersrc_args;
+    return args;
+}
 NAMESPACE_END
 

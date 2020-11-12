@@ -279,9 +279,16 @@ bool Player::installFilter(AudioFilter *filter, int index)
     return d->installFilter(filter, index);
 }
 
-void Player::installFilter(VideoFilter *filter)
+bool Player::installFilter(VideoFilter * filter, VideoRenderer * render, int index)
 {
+    DPTR_D(Player);
+    return d->installFilter(filter, render, index);
+}
 
+bool Player::installFilter(RenderFilter * filter, VideoRenderer * render, int index)
+{
+    DPTR_D(Player);
+    return d->installFilter(filter, render, index);
 }
 
 std::map<string, string> Player::internalSubtitles() const

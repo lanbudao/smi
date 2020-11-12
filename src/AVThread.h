@@ -2,6 +2,7 @@
 #define AVTHREAD_H
 
 #include "CThread.h"
+#include "mediainfo.h"
 
 NAMESPACE_BEGIN
 
@@ -16,6 +17,8 @@ class AVThread: public CThread
     DPTR_DECLARE_PRIVATE(AVThread)
 public:
     virtual ~AVThread();
+
+    void setMediaInfo(MediaInfo* info);
 
     void stop() PU_DECL_OVERRIDE;
     virtual void pause(bool p);

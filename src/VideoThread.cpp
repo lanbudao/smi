@@ -250,7 +250,7 @@ void VideoThread::run()
                                frame->serial());
 			clock->updateClock(SyncToExternalClock, SyncToVideo);
         }
-
+        applyFilters(frame);
 		d->output->lock();
 		d->output->sendVideoFrame(*frame);
 		d->output->unlock();
@@ -270,4 +270,17 @@ void VideoThread::run()
     CThread::run();
 }
 
+void VideoThread::applyFilters(VideoFrame * frame)
+{
+    DPTR_D(VideoThread);
+    if (!d->filters.empty()) {
+        for (std::list<Filter*>::iterator it = d->filters.begin();
+            it != d->filters.end(); ++it) {
+            VideoFilter *af = static_cast<VideoFilter*>(*it);
+            if (!af->enabled())
+                continue;
+            af->apply(d->media_info, frame);
+        }
+    }
+}
 NAMESPACE_END

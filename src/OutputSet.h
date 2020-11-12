@@ -18,7 +18,7 @@ public:
 
     std::list<AVOutput *> outputs();
 
-	void initVideoRender();
+	//void initVideoRender();
     void lock();
     void unlock();
 

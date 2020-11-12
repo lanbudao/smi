@@ -37,7 +37,7 @@ public:
 
 protected:
     virtual std::string sourceArguments() const = 0;
-    bool putFrame(Frame* frame, bool changed);
+    bool putFrame(Frame* frame, bool changed, bool is_video = false);
     bool getFrame();
     void* getFrameHolder();
 
@@ -54,7 +54,21 @@ public:
     ~LibAVFilterAudio();
 
 protected:
-    void process(MediaInfo *info, AudioFrame *frame = 0);
+    bool process(MediaInfo *info, AudioFrame *frame = 0);
+    std::string sourceArguments() const override;
+
+};
+
+class LibAVFilterVideoPrivate;
+class FFPRO_EXPORT LibAVFilterVideo : public LibAVFilter, public VideoFilter
+{
+    DPTR_DECLARE_PRIVATE(LibAVFilterVideo)
+public:
+    LibAVFilterVideo();
+    ~LibAVFilterVideo();
+
+protected:
+    bool process(MediaInfo *info, VideoFrame *frame = 0);
     std::string sourceArguments() const override;
 
 };

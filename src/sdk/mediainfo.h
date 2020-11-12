@@ -4,6 +4,13 @@
 #include <vector>
 #include <string>
 
+typedef struct Rational {
+    int num; ///< Numerator
+    int den; ///< Denominator
+    Rational(int n = 0, int d = 0) { num = n; den = d; }
+    double toDouble() { return num / (double) den; }
+} Rational;
+
 typedef struct AudioStreamInfo_ {
     int stream;
     int64_t start_time; /* ms */
@@ -20,8 +27,8 @@ typedef struct AudioStreamInfo_ {
     int channels;
     int frame_size;
     uint64_t channel_layout;
-	std::string channel_layout_s;
-
+    std::string channel_layout_s;
+    Rational time_base;
 } AudioStreamInfo;
 
 typedef struct VideoStreamInfo_ {
@@ -36,10 +43,12 @@ typedef struct VideoStreamInfo_ {
     int codec_width, codec_height;
     float rotate = 0.0;
     double pts;
-    float aspect_ratio;
+    Rational display_aspect_ratio;
     int pixel_format;   /* the pixel format, the value corresponds to enum AVPixelFormat. */
     int delay;
-	double frame_rate;
+    Rational frame_rate;
+    Rational sample_aspect_ratio; // video only
+    Rational time_base;
 } VideoStreamInfo;
 
 typedef struct MediaInfo_ {

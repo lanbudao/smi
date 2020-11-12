@@ -80,6 +80,11 @@ void VideoFrame::setData(void *data)
     setPos(d->frame->pkt_pos);
 }
 
+void VideoFrame::setFormat(const VideoFormat & fmt)
+{
+    d_func()->setFormat(fmt);
+}
+
 int VideoFrame::channelCount() const {
     DPTR_D(const VideoFrame);
     if (!d->format.isValid())
@@ -117,9 +122,19 @@ int VideoFrame::width() const {
     return d->width;
 }
 
+void VideoFrame::setWidth(int w)
+{
+    d_func()->width = w;
+}
+
 int VideoFrame::height() const {
     DPTR_D(const VideoFrame);
     return d->height;
+}
+
+void VideoFrame::setHeight(int h)
+{
+    d_func()->height = h;
 }
 
 int VideoFrame::effectiveBytesPerLine(int plane) const

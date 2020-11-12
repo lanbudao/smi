@@ -4,6 +4,7 @@
 #include "VideoRenderer.h"
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
+#include "filter.h"
 #include <cmath>
 
 NAMESPACE_BEGIN
@@ -50,6 +51,8 @@ public:
 	RectF roi;
 	
 	int orientation;
+
+    std::list<Filter*> filters;
 };
 
 int VideoRendererPrivate::rotation() const {

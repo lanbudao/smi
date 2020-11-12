@@ -491,6 +491,7 @@ void Demuxer::initMediaInfo()
             char buf[128];
             av_get_channel_layout_string(buf, sizeof(buf), info.channels, info.channel_layout);
             info.channel_layout_s = std::string(buf);
+            info.time_base = Rational(st->time_base.num, st->time_base.den);
             d->media_info->audios.push_back(info);
             if (d->stream_index[MediaTypeAudio] == i) {
                 d->media_info->audio = &d->media_info->audios[d->media_info->audios.size() - 1];
@@ -510,9 +511,10 @@ void Demuxer::initMediaInfo()
             info.pixel_format = st->codecpar->format;
             info.delay = st->codecpar->video_delay;
             info.rotate = 0.0;
+            info.time_base = Rational(st->time_base.num, st->time_base.den);
 #if AV_MODULE_CHECK(LIBAVFORMAT, 55, 18, 0, 39, 100)
-            AVRational rat = st->display_aspect_ratio;
-            info.aspect_ratio = rat.den == 0 ? 0 : FORCE_FLOAT(rat.num) / FORCE_FLOAT(rat.den);
+            info.display_aspect_ratio = Rational(st->display_aspect_ratio.num, st->display_aspect_ratio.den);
+            info.sample_aspect_ratio = Rational(st->sample_aspect_ratio.num, st->sample_aspect_ratio.den);
             uint8_t *sd = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, nullptr);
             if (sd) {
                 double r = av_display_rotation_get((int32_t*)(sd));
@@ -520,16 +522,8 @@ void Demuxer::initMediaInfo()
                     info.rotate = (FORCE_INT(r) + 360) % 360;
             }
 #endif
-			if (st->avg_frame_rate.den && st->avg_frame_rate.num)
-				info.frame_rate = av_q2d(st->avg_frame_rate);
-#if (defined FF_API_R_FRAME_RATE && FF_API_R_FRAME_RATE)
-			//avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
-			else if (st->r_frame_rate.den && st->r_frame_rate.num) {
-				if (st->r_frame_rate.num < 90000)
-					info.frame_rate = av_q2d(st->r_frame_rate);
-				AVDebug("r_frame_rate-->%d/%d\n", st->r_frame_rate.num, st->r_frame_rate.den);
-			}
-#endif
+			AVRational fr = av_guess_frame_rate(d->format_ctx, st, nullptr);
+            info.frame_rate = Rational(fr.num, fr.den);
             d->media_info->videos.push_back(info);
             if (d->stream_index[MediaTypeVideo] == i) {
                 d->media_info->video = &d->media_info->videos[d->media_info->videos.size() - 1];

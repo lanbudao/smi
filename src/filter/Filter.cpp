@@ -48,6 +48,11 @@ void VideoFilter::installTo(Player *player)
     player->installFilter(this);
 }
 
+void VideoFilter::apply(MediaInfo * info, VideoFrame * frame)
+{
+    process(info, frame);
+}
+
 AudioFilter::AudioFilter():
     Filter(new AudioFilterPrivate)
 {
@@ -75,4 +80,25 @@ void AudioFilter::apply(MediaInfo * info, AudioFrame * frame)
     process(info, frame);
 }
 
+RenderFilter::RenderFilter() :
+    Filter(new RenderFilterPrivate)
+{
+
+}
+
+RenderFilter::RenderFilter(RenderFilterPrivate *d) :
+    Filter(d)
+{
+
+}
+
+RenderFilter::~RenderFilter()
+{
+
+}
+
+void RenderFilter::installTo(Player *player)
+{
+    player->installFilter(this);
+}
 NAMESPACE_END

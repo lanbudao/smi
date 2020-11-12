@@ -18,6 +18,8 @@ public:
 
     void stepToNextFrame(std::function<void()> cb);
 
+    void applyFilters(VideoFrame * frame);
+
 protected:
     void run() PU_DECL_OVERRIDE;
 

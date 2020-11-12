@@ -22,28 +22,22 @@ public:
 class AudioFilterPrivate: public FilterPrivate
 {
 public:
-    AudioFilterPrivate()
-    {
-
-    }
-    virtual ~AudioFilterPrivate()
-    {
-
-    }
+    AudioFilterPrivate() {}
+    virtual ~AudioFilterPrivate() {}
 };
 
 class VideoFilterPrivate: public FilterPrivate
 {
 public:
-    VideoFilterPrivate()
-    {
-
-    }
-    virtual ~VideoFilterPrivate()
-    {
-
-    }
+    VideoFilterPrivate() {}
+    virtual ~VideoFilterPrivate() {}
 };
 
+class RenderFilterPrivate : public FilterPrivate
+{
+public:
+    RenderFilterPrivate() {}
+    virtual ~RenderFilterPrivate() {}
+};
 NAMESPACE_END
 #endif //FILTER_P_H

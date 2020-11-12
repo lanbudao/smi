@@ -27,6 +27,11 @@ void AVThread::stop()
     CThread::stop();
 }
 
+void AVThread::setMediaInfo(MediaInfo * info)
+{
+    d_func()->media_info = info;
+}
+
 void AVThread::pause(bool p)
 {
     DPTR_D(AVThread);

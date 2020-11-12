@@ -87,6 +87,12 @@ public:
 
     bool installFilter(AudioFilter* f, int index);
 
+    bool installFilter(VideoFilter* f, VideoRenderer* render, int index);
+
+    bool installFilter(RenderFilter* f, VideoRenderer* render, int index);
+
+    bool insertFilter(std::list<Filter*> &filters, Filter* f, int index);
+
     void onSeekFinished(void*) { seeking = false; }
 
     std::string url;
@@ -128,6 +134,8 @@ public:
     /* filters*/
     std::list<Filter*> audio_filters;
     std::list<Filter*> video_filters;
+    std::map<VideoRenderer*, std::list<Filter*>> renderToFilters;
+    std::list<Filter*> render_filters;
 
     MediaInfo mediainfo;
 
@@ -228,6 +236,7 @@ bool PlayerPrivate::setupAudioThread()
 	if (!audio_thread) {
 		audio_thread = new AudioThread();
 		audio_output_set.addOutput(ao);
+        audio_thread->setMediaInfo(&mediainfo);
 		audio_thread->setOutputSet(&audio_output_set);
 		audio_thread->setClock(&clock);
         audio_thread->updateFilters(audio_filters);
@@ -272,7 +281,8 @@ bool PlayerPrivate::setupVideoThread()
 		return false;
 	}
 	if (!video_thread) {
-		video_thread = new VideoThread();
+        video_thread = new VideoThread();
+        video_thread->setMediaInfo(&mediainfo);
 		video_thread->setOutputSet(&video_output_set);
 		video_thread->setClock(&clock);
         clock.init(SyncToVideo, audio_thread->packets()->serialAddr());
@@ -287,7 +297,7 @@ bool PlayerPrivate::setupVideoThread()
 void PlayerPrivate::updateBufferValue(PacketQueue* buf)
 {
 	const bool is_video = video_thread && buf == video_thread->packets();
-	const double fps = std::max<double>(24.0, mediainfo.video->frame_rate);
+	const double fps = std::max<double>(24.0, mediainfo.video->frame_rate.toDouble());
 	int64_t bv = 24;
 	if (buffer_mode == BufferTime)
 		bv = 1000LL; //ms
@@ -304,27 +314,70 @@ void PlayerPrivate::updateBufferValue(PacketQueue* buf)
 	buf->setBufferValue(buffer_value < 0LL ? bv : buffer_value);
 }
 
-bool PlayerPrivate::installFilter(AudioFilter * filter, int index)
+inline bool PlayerPrivate::installFilter(AudioFilter * filter, int index)
+{
+    if (!audio_thread)
+        return false;
+    if (!insertFilter(audio_filters, filter, index))
+        return false;
+    audio_thread->updateFilters(audio_filters);
+    return true;
+}
+
+inline bool PlayerPrivate::installFilter(VideoFilter * filter, VideoRenderer * render, int index)
+{
+    if (render) { // install to videorender appointed
+        if (!insertFilter(renderToFilters[render], filter, index))
+            return false;
+        render->updateFilters(renderToFilters[render]);
+    }
+    else { // install to every videorender
+        if (!video_thread)
+            return false;
+        if (!insertFilter(video_filters, filter, index))
+            return false;
+        video_thread->updateFilters(video_filters);
+    }
+    return true;
+}
+
+inline bool PlayerPrivate::installFilter(RenderFilter * filter, VideoRenderer * render, int index)
+{
+    if (render) { // install to videorender appointed
+        if (!insertFilter(renderToFilters[render], filter, index))
+            return false;
+        render->updateFilters(renderToFilters[render]);
+    }
+    else { // install to every videorender
+        std::map<VideoRenderer*, std::list<Filter*>>::iterator it = renderToFilters.begin();
+        for (; it != renderToFilters.end(); ++it) {
+            if (!insertFilter(renderToFilters[render], filter, index))
+                return false;
+            render->updateFilters(renderToFilters[render]);
+        }
+    }
+    return true;
+}
+
+inline bool PlayerPrivate::insertFilter(std::list<Filter*>& filters, Filter * f, int index)
 {
     int p = index;
     if (p < 0)
-        p += audio_filters.size();
+        p += filters.size();
     if (p < 0)
         p = 0;
-    if (p > audio_filters.size())
-        p = audio_filters.size();
+    if (p > filters.size())
+        p = filters.size();
     std::list<Filter*>::iterator it_dst2;
-    std::list<Filter*>::iterator it_dst = audio_filters.begin();
+    std::list<Filter*>::iterator it_dst = filters.begin();
     while (--p >= 0) {
         it_dst++;
     }
-    std::list<Filter*>::iterator it_src = std::find(audio_filters.begin(), audio_filters.end(), filter);
-    if ((it_dst == it_src) && !audio_filters.empty())
+    std::list<Filter*>::iterator it_src = std::find(filters.begin(), filters.end(), f);
+    if ((it_dst == it_src) && !filters.empty())
         return true;
-    audio_filters.remove(filter);
-    audio_filters.insert(it_dst, filter);
-    if (audio_thread)
-        audio_thread->updateFilters(audio_filters);
+    filters.remove(f);
+    filters.insert(it_dst, f);
     return true;
 }
 

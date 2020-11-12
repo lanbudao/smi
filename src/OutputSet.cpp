@@ -38,15 +38,15 @@ std::list<AVOutput *> OutputSet::outputs()
     return d->outputs;
 }
 
-void OutputSet::initVideoRender()
-{
-	DPTR_D(OutputSet);
-	std::list<AVOutput *>::iterator itor;
-	for (itor = d->outputs.begin(); itor != d->outputs.end(); itor++) {
-		VideoRenderer *renderer = static_cast<VideoRenderer *>(*itor);
-		renderer->initVideoRender();
-	}
-}
+//void OutputSet::initVideoRender()
+//{
+//	DPTR_D(OutputSet);
+//	std::list<AVOutput *>::iterator itor;
+//	for (itor = d->outputs.begin(); itor != d->outputs.end(); itor++) {
+//		VideoRenderer *renderer = static_cast<VideoRenderer *>(*itor);
+//		renderer->initVideoRender();
+//	}
+//}
 
 void OutputSet::lock()
 {

@@ -25,6 +25,7 @@ class AVThreadPrivate
 {
 public:
     AVThreadPrivate() :
+        media_info(nullptr),
         decoder(nullptr),
         stopped(false),
         paused(false),
@@ -51,6 +52,7 @@ public:
 		continue_refresh_cond.wait_for(lock, std::chrono::milliseconds(ms));
 	}
 
+    MediaInfo *media_info;
     AVDecoder *decoder;
     PacketQueue packets;
 

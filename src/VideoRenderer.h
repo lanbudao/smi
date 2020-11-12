@@ -6,13 +6,12 @@
 #include "renderer/RectF.h"
 
 NAMESPACE_BEGIN
-
+class Filter;
 class VideoRendererPrivate;
 class VideoRenderer: public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:
-//    VideoRenderer(VideoRendererPrivate *d);
     VideoRenderer();
 
     enum OutAspectRatioMode {
@@ -43,6 +42,9 @@ public:
 	void setOutAspectRatio(double ratio);
 
 	void setupAspectRatio();
+
+    void updateFilters(const std::list<Filter*> filters);
+    const std::list<Filter *> &filters() const;
 
 protected:
     virtual void onResizeWindow();

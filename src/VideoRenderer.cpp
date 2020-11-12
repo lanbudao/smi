@@ -6,12 +6,6 @@
 
 NAMESPACE_BEGIN
 
-//VideoRenderer::VideoRenderer(VideoRendererPrivate *d):
-//    AVOutput(new VideoRendererPrivate())
-//{
-
-//}
-
 VideoRenderer::VideoRenderer():
     AVOutput(new VideoRendererPrivate)
 {
@@ -203,6 +197,18 @@ void VideoRenderer::setupAspectRatio()
 		(GLfloat)d->out_rect.height() / (GLfloat)d->renderer_height, 1);
 	if (d->rotation())
 		d->matrix.rotate(d->rotation(), 0, 0, 1); // Z axis
+}
+
+void VideoRenderer::updateFilters(const std::list<Filter*> filters)
+{
+    DPTR_D(VideoRenderer);
+    std::unique_lock<std::mutex> lock_mtx(d->mtx);
+    d->filters = filters;
+}
+
+const std::list<Filter*>& VideoRenderer::filters() const
+{
+    return d_func()->filters;
 }
 
 NAMESPACE_END

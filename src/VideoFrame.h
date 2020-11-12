@@ -38,7 +38,7 @@ public:
     VideoFrame &operator=(const VideoFrame &other);
 
     void setData(void* data);
-
+    void setFormat(const VideoFormat &fmt);
     int channelCount() const;
 
     VideoFormat format() const;
@@ -50,7 +50,9 @@ public:
 
     Size size() const;
     int width() const;
+    void setWidth(int w);
     int height() const;
+    void setHeight(int h);
 	int effectiveBytesPerLine(int plane) const;
 
     void setDuration(double d);

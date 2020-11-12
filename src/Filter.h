@@ -38,7 +38,7 @@ public:
 
 protected:
     AudioFilter(AudioFilterPrivate *d);
-    virtual void process(MediaInfo* info, AudioFrame* frame = 0) = 0;
+    virtual bool process(MediaInfo* info, AudioFrame* frame = 0) = 0;
 };
 
 class VideoFilterPrivate;
@@ -50,11 +50,26 @@ public:
     virtual ~VideoFilter();
 
     void installTo(Player *player);
+    void apply(MediaInfo* info, VideoFrame *frame = 0);
 
 protected:
     VideoFilter(VideoFilterPrivate *d);
-    virtual void process(MediaInfo* info, VideoFrame* frame = 0) = 0;
+    virtual bool process(MediaInfo* info, VideoFrame* frame = 0) = 0;
 };
 
+class RenderFilterPrivate;
+class FFPRO_EXPORT RenderFilter : public Filter
+{
+    DPTR_DECLARE_PRIVATE(Filter)
+public:
+    RenderFilter();
+    virtual ~RenderFilter();
+
+    void installTo(Player *player);
+
+protected:
+    RenderFilter(RenderFilterPrivate *d);
+    virtual void process(MediaInfo* info, VideoFrame* frame = 0) = 0;
+};
 NAMESPACE_END
 #endif //FILTER_H

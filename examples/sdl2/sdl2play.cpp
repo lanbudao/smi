@@ -74,6 +74,10 @@ int main(int argc, char *argv[])
     afilter->setOptions("afade=t=in:ss=0:d=5");
     //player->installFilter(afilter);
 
+    LibAVFilterVideo* vfilter = new LibAVFilterVideo;
+    vfilter->setOptions("curves=vintage");
+    //player->installFilter(vfilter);
+    
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");
     if (icon) {
@@ -146,6 +150,7 @@ int main(int argc, char *argv[])
     }
     delete player;
     delete afilter;
+    delete vfilter;
     SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
     AVDebug("player uninitialize\n");

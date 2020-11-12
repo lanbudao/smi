@@ -13,6 +13,7 @@ NAMESPACE_BEGIN
 class Subtitle;
 class AudioFilter;
 class VideoFilter;
+class RenderFilter;
 class VideoRenderer;
 class PlayerPrivate;
 class FFPRO_EXPORT Player
@@ -99,7 +100,12 @@ public:
 
     /* Filter below */
     bool installFilter(AudioFilter *filter, int index = 0x7FFFFFFF);
-    void installFilter(VideoFilter *filter);
+    /**
+     * @brief if render is NULL, the filter will apply to every videorender
+     * You can install filter to the videorender appointed
+     */
+    bool installFilter(VideoFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
+    bool installFilter(RenderFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
 
     std::map<std::string, std::string> internalSubtitles() const;
     Subtitle* internalSubtitle();
