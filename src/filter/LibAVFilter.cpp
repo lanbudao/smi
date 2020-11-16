@@ -15,46 +15,13 @@ extern "C" {
 #include <sstream>
 NAMESPACE_BEGIN
 
-#define AV_FRAME_REF 0
-
-#define FFPROC_HAVE_av_buffersink_get_frame (LIBAV_MODULE_CHECK(LIBAVFILTER, 4, 2, 0) || FFMPEG_MODULE_CHECK(LIBAVFILTER, 3, 79, 100)) //3.79.101: ff2.0.4
-
-// local types can not be used as template parameters
-class AVFrameHolder {
-public:
-    AVFrameHolder() {
-        m_frame = av_frame_alloc();
-#if !FFPROC_HAVE_av_buffersink_get_frame
-        picref = 0;
-#endif
-    }
-    ~AVFrameHolder() {
-        av_frame_free(&m_frame);
-#if !FFPROC_HAVE_av_buffersink_get_frame
-        avfilter_unref_bufferp(&picref);
-#endif
-    }
-    AVFrame* frame() { return m_frame; }
-#if !FFPROC_HAVE_av_buffersink_get_frame
-    AVFilterBufferRef** bufferRef() { return &picref; }
-    // copy properties and data ptrs(no deep copy).
-    void copyBufferToFrame() { avfilter_copy_buf_props(m_frame, picref); }
-#endif
-private:
-    AVFrame *m_frame;
-#if !FFPROC_HAVE_av_buffersink_get_frame
-    AVFilterBufferRef *picref;
-#endif
-};
-typedef std::shared_ptr<AVFrameHolder> AVFrameHolderRef;
-
 class LibAVFilterPrivate
 {
 public:
     LibAVFilterPrivate() :
-        av_frame(nullptr),
         status(LibAVFilter::NotConfigured)
     {
+        memset(scale_sws_opts, 0, 512);
         filter_graph = 0;
         in_filter_ctx = 0;
         out_filter_ctx = 0;
@@ -63,37 +30,72 @@ public:
     ~LibAVFilterPrivate()
     {
         avfilter_graph_free(&filter_graph);
-        if (av_frame) {
-            av_frame_free(&av_frame);
-            av_frame = nullptr;
-        }
     }
-    bool config(const std::string &args, bool is_video);
+    bool config_filter_graph();
+    bool config_filter(const std::string &args, bool is_video);
 
 public:
-    AVFrame* av_frame;
     std::string options;
+    char scale_sws_opts[512];
     LibAVFilter::Status status;
     AVFilterGraph *filter_graph;
     AVFilterContext *in_filter_ctx;
     AVFilterContext *out_filter_ctx;
 };
 
-bool LibAVFilterPrivate::config(const std::string &args, bool is_video)
+bool LibAVFilterPrivate::config_filter_graph()
 {
-    if (av_frame) {
-        av_frame_free(&av_frame);
-        av_frame = nullptr;
+    int i = 0;
+    int nb_filters;
+
+    nb_filters = filter_graph->nb_filters;
+
+    struct DeleteHelper {
+        DeleteHelper(AVFilterInOut** inout_) :inout(inout_) {}
+        ~DeleteHelper() { avfilter_inout_free(inout); }
+        AVFilterInOut** inout;
+    };
+    AVFilterInOut *outputs = nullptr, *inputs = nullptr;
+    if (filter_graph) {
+        outputs = avfilter_inout_alloc();
+        inputs = avfilter_inout_alloc();
+        DeleteHelper scope_out(&outputs), scope_in(&inputs);
+        if (!outputs || !inputs) {
+            return false;
+        }
+        outputs->name = av_strdup("in");
+        outputs->filter_ctx = in_filter_ctx;
+        outputs->pad_idx = 0;
+        outputs->next = NULL;
+
+        inputs->name = av_strdup("out");
+        inputs->filter_ctx = out_filter_ctx;
+        inputs->pad_idx = 0;
+        inputs->next = NULL;
+
+        AV_ENSURE_OK(avfilter_graph_parse_ptr(filter_graph, options.data(), &inputs, &outputs, NULL), false);
     }
+    else {
+        AV_ENSURE_OK(avfilter_link(in_filter_ctx, 0, out_filter_ctx, 0), false);
+    }
+    /* Reorder the filters to ensure that inputs of the custom filters are merged first */
+    for (i = 0; i < filter_graph->nb_filters - nb_filters; i++)
+        FFSWAP(AVFilterContext*, filter_graph->filters[i], filter_graph->filters[i + nb_filters]);
+    AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
+    return true;
+}
+
+bool LibAVFilterPrivate::config_filter(const std::string &args, bool video)
+{
     status = LibAVFilter::ConfigureFailed;
 
     avfilter_graph_free(&filter_graph);
     filter_graph = avfilter_graph_alloc();
     AVDebug("buffersrc_args=%s\n", args.data());
-#if LIBAVFILTER_VERSION_INT >= AV_VERSION_INT(7,0,0)
-    const
-#endif
-    AVFilter *buffersrc = avfilter_get_by_name(is_video ? "buffer" : "abuffer");
+    if (video) {
+        filter_graph->scale_sws_opts = scale_sws_opts;
+    }
+    const AVFilter *buffersrc = avfilter_get_by_name(video ? "buffer" : "abuffer");
     assert(buffersrc);
     AV_ENSURE_OK(avfilter_graph_create_filter(&in_filter_ctx,
         buffersrc,
@@ -101,41 +103,16 @@ bool LibAVFilterPrivate::config(const std::string &args, bool is_video)
         filter_graph)
         , false);
     /* buffer video sink: to terminate the filter chain. */
-#if LIBAVFILTER_VERSION_INT >= AV_VERSION_INT(7,0,0)
-    const
-#endif
-    AVFilter *buffersink = avfilter_get_by_name(is_video ? "buffersink" : "abuffersink");
+    const AVFilter *buffersink = avfilter_get_by_name(video ? "buffersink" : "abuffersink");
     assert(buffersink);
     AV_ENSURE_OK(avfilter_graph_create_filter(&out_filter_ctx, buffersink, "out",
         NULL, NULL, filter_graph)
         , false);
-    /* Endpoints for the filter graph. */
-    AVFilterInOut *outputs = avfilter_inout_alloc();
-    AVFilterInOut *inputs = avfilter_inout_alloc();
-    outputs->name = av_strdup("in");
-    outputs->filter_ctx = in_filter_ctx;
-    outputs->pad_idx = 0;
-    outputs->next = NULL;
+    // TODO: auto rotate, see ffplay
+    
+    if (!config_filter_graph())
+        return false;
 
-    inputs->name = av_strdup("out");
-    inputs->filter_ctx = out_filter_ctx;
-    inputs->pad_idx = 0;
-    inputs->next = NULL;
-
-    struct delete_helper {
-        AVFilterInOut **x;
-        delete_helper(AVFilterInOut **io) : x(io) {}
-        ~delete_helper() {
-            // libav always free it in avfilter_graph_parse. so we does nothing
-#if FFPRO_USE_FFMPEG(LIBAVFILTER)
-            avfilter_inout_free(x);
-#endif
-        }
-    } scoped_in(&inputs), scoped_out(&outputs);
-    //avfilter_graph_parse, avfilter_graph_parse2?
-    AV_ENSURE_OK(avfilter_graph_parse_ptr(filter_graph, options.data(), &inputs, &outputs, NULL), false);
-    AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
-    av_frame = av_frame_alloc();
     status = LibAVFilter::ConfigureOk;
     return true;
 }
@@ -169,59 +146,12 @@ LibAVFilter::Status LibAVFilter::status() const
     return priv->status;
 }
 
-bool LibAVFilter::putFrame(Frame * frame, bool changed, bool is_video)
+bool LibAVFilter::configure(bool video)
 {
-    if (priv->status == LibAVFilter::NotConfigured || !priv->av_frame || changed) {
-        if (!priv->config(sourceArguments(), is_video)) {
-            AVWarning("setup audio filter graph error\n");
-            return false;
-        }
-    }
-    //av_frame_ref(priv->av_frame, frame->frame());
-    //AV_ENSURE_OK(av_buffersrc_write_frame(priv->in_filter_ctx, priv->av_frame), false);
-    //av_frame_unref(priv->av_frame);
-    /**
-     * If use av_buffersrc_write_frame, we must call av_frame_unref after write.
-     * because it will creates a new reference to the input frame.
-     */
-    AV_ENSURE_OK(av_buffersrc_add_frame(priv->in_filter_ctx, frame->frame()), false);
-    return true; 
+    return priv->config_filter(sourceArguments(), video);
 }
 
-bool LibAVFilter::getFrame()
-{
-    int ret = av_buffersink_get_frame(priv->out_filter_ctx, priv->av_frame);
-    if (ret < 0) {
-        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
-        return false;
-    }
-    return true;
-}
-
-void * LibAVFilter::getFrameHolder()
-{
-#if FFPROC_HAVE_AVFILTER
-    AVFrameHolder *holder = NULL;
-    holder = new AVFrameHolder();
-#if FFPROC_HAVE_av_buffersink_get_frame
-    int ret = av_buffersink_get_frame(priv->out_filter_ctx, holder->frame());
-#else
-    int ret = av_buffersink_read(priv->out_filter_ctx, holder->bufferRef());
-#endif //QTAV_HAVE_av_buffersink_get_frame
-    if (ret < 0) {
-        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
-        delete holder;
-        return 0;
-    }
-#if !FFPROC_HAVE_av_buffersink_get_frame
-    holder->copyBufferToFrame();
-#endif
-    return holder;
-#endif
-    return 0;
-}
-
-class LibAVFilterAudioPrivate: public AudioFilterPrivate
+class LibAVFilterAudioPrivate: public AudioFilterPrivate, public LibAVFilterPrivate
 {
 public:
     LibAVFilterAudioPrivate()
@@ -230,6 +160,7 @@ public:
         , sample_fmt(AV_SAMPLE_FMT_NONE)
         , channel_layout(0)
     {}
+
     int sample_rate;
     AVSampleFormat sample_fmt;
     int64_t channel_layout;
@@ -261,21 +192,20 @@ bool LibAVFilterAudio::process(MediaInfo * info, AudioFrame * aframe)
         d->sample_fmt = (AVSampleFormat)afmt.sampleFormatFFmpeg();
         d->channel_layout = afmt.channelLayoutFFmpeg();
     }
-    if (!putFrame(aframe, changed))
-        return false;
-#if 0
-    AVFrameHolderRef ref((AVFrameHolder*)getFrameHolder());
-    if (!ref)
-        return false;
-    const AVFrame *f = ref->frame();
-#else
-    AVFrame* f = aframe->frame();
-    int ret = av_buffersink_get_frame(priv->out_filter_ctx, f);
-    if (ret < 0) {
-        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
-        return false;
+    if (status() == LibAVFilter::NotConfigured || changed) {
+        if (!configure()) {
+            AVWarning("Configure audio filter failed!\n");
+            return false;
+        }
     }
-#endif
+    /**
+     * If use av_buffersrc_write_frame, we must call av_frame_unref after write.
+     * because it will creates a new reference to the input frame.
+     */
+    AVFrame* f = aframe->frame();
+    AV_ENSURE_OK(av_buffersrc_add_frame(priv->in_filter_ctx, f), false);
+    AV_ENSURE_OK(av_buffersink_get_frame(priv->out_filter_ctx, f), false);
+
     AudioFormat fmt;
     fmt.setSampleFormatFFmpeg(f->format);
     fmt.setChannelLayoutFFmpeg(f->channel_layout);
@@ -335,6 +265,23 @@ LibAVFilterVideo::~LibAVFilterVideo()
 
 }
 
+void LibAVFilterVideo::setSwsOpts(std::map<std::string, std::string> &opts)
+{
+    memset(priv->scale_sws_opts, 0, 512);
+    char *sws_flags_str = priv->scale_sws_opts;
+    std::map<std::string, std::string>::iterator it = opts.begin();
+    for (; it != opts.end(); ++it) {
+        if (it->first == "sws_flags") {
+            av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", "flags", it->second);
+        }
+        else {
+            av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", it->first, it->second);
+        }
+    }
+    if (strlen(sws_flags_str))
+        sws_flags_str[strlen(sws_flags_str) - 1] = '\0';
+}
+
 bool LibAVFilterVideo::process(MediaInfo * info, VideoFrame * vframe)
 {
     if (status() == ConfigureFailed)
@@ -352,14 +299,16 @@ bool LibAVFilterVideo::process(MediaInfo * info, VideoFrame * vframe)
             d->frame_rate = info->video->frame_rate;
         }
     }
-    if (!putFrame(vframe, changed, true))
-        return false;
-    AVFrame* f = vframe->frame();
-    int ret = av_buffersink_get_frame(priv->out_filter_ctx, f);
-    if (ret < 0) {
-        AVWarning("av_buffersink_get_frame error: %s\n", averror2str(ret));
-        return false;
+    if (status() == LibAVFilter::NotConfigured || changed) {
+        if (!configure(true)) {
+            AVWarning("Configure video filter failed!\n");
+            return false;
+        }
     }
+    AVFrame* f = vframe->frame();
+    AV_ENSURE_OK(av_buffersrc_add_frame(priv->in_filter_ctx, f), false);
+    AV_ENSURE_OK(av_buffersink_get_frame(priv->out_filter_ctx, f), false);
+
     vframe->setWidth(f->width);
     vframe->setHeight(f->height);
     vframe->setBits(f->data);
@@ -386,4 +335,3 @@ std::string LibAVFilterVideo::sourceArguments() const
     return args;
 }
 NAMESPACE_END
-

@@ -37,9 +37,7 @@ public:
 
 protected:
     virtual std::string sourceArguments() const = 0;
-    bool putFrame(Frame* frame, bool changed, bool is_video = false);
-    bool getFrame();
-    void* getFrameHolder();
+    bool configure(bool video = false);
 
 protected:
     LibAVFilterPrivate* priv;
@@ -66,6 +64,8 @@ class FFPRO_EXPORT LibAVFilterVideo : public LibAVFilter, public VideoFilter
 public:
     LibAVFilterVideo();
     ~LibAVFilterVideo();
+
+    void setSwsOpts(std::map<std::string, std::string> &opts);
 
 protected:
     bool process(MediaInfo *info, VideoFrame *frame = 0);
