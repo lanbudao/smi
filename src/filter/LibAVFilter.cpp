@@ -10,6 +10,7 @@ extern "C" {
 #include "libavfilter/buffersrc.h"
 #include "libavfilter/buffersink.h"
 #include "libavutil/avstring.h"
+#include "libavutil/dict.h"
 }
 #include <assert.h>
 #include <sstream>
@@ -19,9 +20,10 @@ class LibAVFilterPrivate
 {
 public:
     LibAVFilterPrivate() :
-        status(LibAVFilter::NotConfigured)
+        status(LibAVFilter::NotConfigured),
+        sws_dict(nullptr)
     {
-        memset(scale_sws_opts, 0, 512);
+        av_dict_set(&sws_dict, "flags", "bicubic", 0);
         filter_graph = 0;
         in_filter_ctx = 0;
         out_filter_ctx = 0;
@@ -29,6 +31,7 @@ public:
     }
     ~LibAVFilterPrivate()
     {
+        av_dict_free(&sws_dict);
         avfilter_graph_free(&filter_graph);
     }
     bool config_filter_graph();
@@ -36,7 +39,7 @@ public:
 
 public:
     std::string options;
-    char scale_sws_opts[512];
+    AVDictionary *sws_dict;
     LibAVFilter::Status status;
     AVFilterGraph *filter_graph;
     AVFilterContext *in_filter_ctx;
@@ -93,7 +96,18 @@ bool LibAVFilterPrivate::config_filter(const std::string &args, bool video)
     filter_graph = avfilter_graph_alloc();
     AVDebug("buffersrc_args=%s\n", args.data());
     if (video) {
-        filter_graph->scale_sws_opts = scale_sws_opts;
+        char sws_flags_str[512] = "";
+        AVDictionaryEntry *e = NULL;
+        while ((e = av_dict_get(sws_dict, "", e, AV_DICT_IGNORE_SUFFIX))) {
+            if (!strcmp(e->key, "sws_flags")) {
+                av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", "flags", e->value);
+            }
+            else
+                av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", e->key, e->value);
+        }
+        if (strlen(sws_flags_str))
+            sws_flags_str[strlen(sws_flags_str) - 1] = '\0';
+        filter_graph->scale_sws_opts = av_strdup(sws_flags_str);
     }
     const AVFilter *buffersrc = avfilter_get_by_name(video ? "buffer" : "abuffer");
     assert(buffersrc);
@@ -151,7 +165,7 @@ bool LibAVFilter::configure(bool video)
     return priv->config_filter(sourceArguments(), video);
 }
 
-class LibAVFilterAudioPrivate: public AudioFilterPrivate, public LibAVFilterPrivate
+class LibAVFilterAudioPrivate: public AudioFilterPrivate
 {
 public:
     LibAVFilterAudioPrivate()
@@ -267,19 +281,10 @@ LibAVFilterVideo::~LibAVFilterVideo()
 
 void LibAVFilterVideo::setSwsOpts(std::map<std::string, std::string> &opts)
 {
-    memset(priv->scale_sws_opts, 0, 512);
-    char *sws_flags_str = priv->scale_sws_opts;
     std::map<std::string, std::string>::iterator it = opts.begin();
     for (; it != opts.end(); ++it) {
-        if (it->first == "sws_flags") {
-            av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", "flags", it->second);
-        }
-        else {
-            av_strlcatf(sws_flags_str, sizeof(sws_flags_str), "%s=%s:", it->first, it->second);
-        }
+        av_dict_set(&priv->sws_dict, it->first.c_str(), it->second.c_str(), AV_DICT_APPEND);
     }
-    if (strlen(sws_flags_str))
-        sws_flags_str[strlen(sws_flags_str) - 1] = '\0';
 }
 
 bool LibAVFilterVideo::process(MediaInfo * info, VideoFrame * vframe)

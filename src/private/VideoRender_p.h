@@ -35,6 +35,8 @@ public:
 
 	bool computeOutParameters(double outAspectRatio);
 
+    void applyFilter();
+
     void* opaque;
     int renderer_width, renderer_height;
     VideoRenderer::OutAspectRatioMode out_ratio_mode;
@@ -93,6 +95,19 @@ bool VideoRendererPrivate::computeOutParameters(double outAspectRatio)
 	out_aspect_ratio = outAspectRatio;
 	//qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
 	return out_rect0 != out_rect;
+}
+
+inline void VideoRendererPrivate::applyFilter()
+{
+    if (!filters.empty()) {
+        for (std::list<Filter*>::iterator it = filters.begin();
+            it != filters.end(); ++it) {
+            VideoFilter *af = static_cast<VideoFilter*>(*it);
+            if (!af->enabled())
+                continue;
+            af->apply(media_info, &current_frame);
+        }
+    }
 }
 
 NAMESPACE_END

@@ -103,6 +103,7 @@ void VideoRenderer::renderVideo()
 	RectF roi = realROI();
 	//d->glv.render(QRectF(-1, 1, 2, -2), roi, d->matrix);
 	if (d->frame_changed) {
+        d->applyFilter();
 		d->glv->setCurrentFrame(d->current_frame);
 		d->frame_changed = false;
     }
