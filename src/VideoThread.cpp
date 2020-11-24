@@ -34,31 +34,43 @@ public:
         bool pkt_valid = true;
         Packet pkt;
         VideoFrame frame;
-
+        flush_dec = false;
         while (true) {
+            int ret = 0;
             if (abort)
                 break;
-            if (!pkts->prepared()) {
-                msleep(1);
-                continue;
+            if (flush_dec) {
+                pkt = Packet::createFlush();
             }
-			pkt = pkts->dequeue(&pkt_valid, 10);
-			if (!pkt_valid) {
-				continue;
-			}
-            serial = pkt.serial;
-            if (pkt.serial != pkts->serial()) {
-                AVDebug("The video pkt is obsolete.\n");
-                continue;
+            else {
+                if (!pkts->prepared()) {
+                    msleep(1);
+                    continue;
+                }
+                pkt = pkts->dequeue(&pkt_valid, 10);
+                if (!pkt_valid) {
+                    continue;
+                }
+                flush_dec = pkt.isEOF();
+                serial = pkt.serial;
+                if (pkt.serial != pkts->serial()) {
+                    AVDebug("The video pkt is obsolete.\n");
+                    continue;
+                }
+                if (pkt.isFlush()) {
+                    AVDebug("Seek is required, flush video decoder.\n");
+                    decoder->flush();
+                    /* must clear the frames buffer for seek*/
+                    frames.clear();
+                    continue;
+                }
             }
-            if (pkt.isFlush()) {
-                AVDebug("Seek is required, flush video decoder.\n");
-				decoder->flush();
-				/* must clear the frames buffer for seek*/
-				frames.clear();
-                continue;
-            }
-            if (decoder->decode(pkt) < 0) {
+            // decode
+            ret = decoder->decode(pkt);
+            if (ret < 0) {
+                if (ret == AVERROR_EOF) {
+                    flush_dec = false;
+                }
                 continue;
             }
             frame = decoder->frame();
@@ -77,6 +89,7 @@ public:
     VideoDecoder* decoder;
     OutputSet* output;
     int serial;
+    bool flush_dec;
 };
 
 

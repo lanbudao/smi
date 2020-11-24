@@ -23,19 +23,22 @@ int VideoDecoderFFmpegBase::decode(const Packet &pkt) {
         return false;
     int ret = 0;
 
-    if (pkt.isEOF()) {
-        AVPacket eofpkt;
-        av_init_packet(&eofpkt);
-        eofpkt.data = nullptr;
-        eofpkt.size = 0;
-        ret = avcodec_send_packet(d->codec_ctx, &eofpkt);
-        av_packet_unref(&eofpkt);
-    } else {
-        ret = avcodec_send_packet(d->codec_ctx, pkt.asAVPacket());
-    }
-    if (ret < 0) {
-        AVWarning("Video decoder send packet error: %s.\n", averror2str(ret));
-        return ret;
+    if (!pkt.isFlush()) {
+        if (pkt.isEOF()) {
+            AVPacket eofpkt;
+            av_init_packet(&eofpkt);
+            eofpkt.data = nullptr;
+            eofpkt.size = 0;
+            ret = avcodec_send_packet(d->codec_ctx, &eofpkt);
+            av_packet_unref(&eofpkt);
+        }
+        else {
+            ret = avcodec_send_packet(d->codec_ctx, pkt.asAVPacket());
+        }
+        if (ret < 0) {
+            AVWarning("Video decoder send packet error: %s.\n", averror2str(ret));
+            return ret;
+        }
     }
     ret = avcodec_receive_frame(d->codec_ctx, d->frame);
     if (ret >= 0) {
