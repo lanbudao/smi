@@ -5,6 +5,7 @@
 
 NAMESPACE_BEGIN
 
+class Packet;
 class AVClock;
 class AVThread;
 class Demuxer;
@@ -28,8 +29,10 @@ public:
 	void stepToNextFrame();
     void updateBufferStatus();
 
+    /*Callback*/
     void setMediaStatusChangedCB(std::function<void(MediaStatus s)> f);
     void setBufferProcessChangedCB(std::function<void(float p)> f);
+    void setSubtitlePacketCallback(std::function<void(Packet* )> f);
 
 protected:
     void run() PU_DECL_OVERRIDE;

@@ -3,7 +3,7 @@
 
 #include "sdk/global.h"
 
-class FFPRO_EXPORT SizeF
+class SMI_EXPORT SizeF
 {
 public:
 	SizeF() : width(0), height(0) {}
@@ -24,7 +24,7 @@ public:
 	float width, height;
 };
 
-class FFPRO_EXPORT Size
+class SMI_EXPORT Size
 {
 public:
     Size(): width(0), height(0) {}

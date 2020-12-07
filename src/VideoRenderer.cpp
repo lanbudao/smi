@@ -102,15 +102,17 @@ void VideoRenderer::renderVideo()
 #else
 	RectF roi = realROI();
 	//d->glv.render(QRectF(-1, 1, 2, -2), roi, d->matrix);
-	if (d->frame_changed) {
-        d->applyFilter();
+    if (d->frame_changed) {
+        d->applyVideoFilter();
 		d->glv->setCurrentFrame(d->current_frame);
 		d->frame_changed = false;
     }
-	d->glv->render(RectF(), roi, d->matrix);
+    d->glv->render(RectF(), roi, d->matrix);
 //    fprintf(stderr, "xxxx: %.3f %.3f\n", d->current_frame.timestamp(), d->current_frame.ptsOfPkt());
 //    fflush(stderr);
+    d->applyRenderFilter();
 #endif
+
 }
 
 RectF VideoRenderer::realROI() const

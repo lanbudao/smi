@@ -32,7 +32,7 @@ NAMESPACE_BEGIN
  * call 'setLogFile' to specify the file to print.
  */
 
-class FFPRO_EXPORT MessageLogContext
+class SMI_EXPORT MessageLogContext
 {
 public:
     MessageLogContext()
@@ -52,7 +52,7 @@ private:
 };
 
 class DebugPrivate;
-class FFPRO_EXPORT Debug
+class SMI_EXPORT Debug
 {
     DPTR_DECLARE_PRIVATE(Debug)
 public:
@@ -75,10 +75,10 @@ public:
     void setContext(MessageLogContext &ctx);
 
 private:
-    class FFPRO_EXPORT DPTR_DECLARE(Debug)
+    class SMI_EXPORT DPTR_DECLARE(Debug)
 };
 
-class FFPRO_EXPORT MessageLogger
+class SMI_EXPORT MessageLogger
 {
     DISABLE_COPY(MessageLogger)
 public:
@@ -98,31 +98,31 @@ public:
     Debug fatal() const;
 
 private:
-    class FFPRO_EXPORT MessageLogContext context;
+    class SMI_EXPORT MessageLogContext context;
 };
 
 /**
  * @brief Whether to output log, default value is false
  */
-void FFPRO_EXPORT setLogOut(bool b);
+void SMI_EXPORT setLogOut(bool b);
 /**
  * @brief Set the level of log, default value is LogWarning
  */
-void FFPRO_EXPORT setLogLevel(LogLevel level);
+void SMI_EXPORT setLogLevel(LogLevel level);
 
 /**
  * @brief Get log level.
  */
-LogLevel FFPRO_EXPORT getLogLevel();
+LogLevel SMI_EXPORT getLogLevel();
 
 /**
  * @brief Set log file (basename and dir, no suffix), defalut `./run`
  * The Program will add suffix (`.log`) automatically
  */ 
 /// 
-void FFPRO_EXPORT setLogFile(const char *file);
+void SMI_EXPORT setLogFile(const char *file);
 
-void FFPRO_EXPORT setRollSize(uint32_t MB);
+void SMI_EXPORT setRollSize(uint32_t MB);
 
 NAMESPACE_END
 

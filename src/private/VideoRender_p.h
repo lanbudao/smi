@@ -4,7 +4,7 @@
 #include "VideoRenderer.h"
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
-#include "filter.h"
+#include "sdk/filter/filter.h"
 #include <cmath>
 
 NAMESPACE_BEGIN
@@ -35,7 +35,8 @@ public:
 
 	bool computeOutParameters(double outAspectRatio);
 
-    void applyFilter();
+    void applyVideoFilter();
+    void applyRenderFilter();
 
     void* opaque;
     int renderer_width, renderer_height;
@@ -97,15 +98,32 @@ bool VideoRendererPrivate::computeOutParameters(double outAspectRatio)
 	return out_rect0 != out_rect;
 }
 
-inline void VideoRendererPrivate::applyFilter()
+inline void VideoRendererPrivate::applyVideoFilter()
 {
     if (!filters.empty()) {
         for (std::list<Filter*>::iterator it = filters.begin();
             it != filters.end(); ++it) {
-            VideoFilter *af = static_cast<VideoFilter*>(*it);
-            if (!af->enabled())
+            if ((*it)->type() != Filter::Video)
                 continue;
-            af->apply(media_info, &current_frame);
+            VideoFilter *f = static_cast<VideoFilter*>(*it);
+            if (!f->enabled())
+                continue;
+            f->apply(media_info, &current_frame);
+        }
+    }
+}
+
+inline void VideoRendererPrivate::applyRenderFilter()
+{
+    if (!filters.empty()) {
+        for (std::list<Filter*>::iterator it = filters.begin();
+            it != filters.end(); ++it) {
+            if ((*it)->type() != Filter::Render)
+                continue;
+            RenderFilter *f = static_cast<RenderFilter*>(*it);
+            if (!f->enabled())
+                continue;
+            f->apply(media_info, &current_frame);
         }
     }
 }

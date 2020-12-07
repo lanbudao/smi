@@ -60,10 +60,10 @@ protected:
 };
 
 
-extern FFPRO_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
-extern FFPRO_EXPORT VideoDecoderId VideoDecoderId_MMAL;
-extern FFPRO_EXPORT VideoDecoderId VideoDecoderId_QSV;
-extern FFPRO_EXPORT VideoDecoderId VideoDecoderId_CrystalHD;
+extern SMI_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
+extern SMI_EXPORT VideoDecoderId VideoDecoderId_MMAL;
+extern SMI_EXPORT VideoDecoderId VideoDecoderId_QSV;
+extern SMI_EXPORT VideoDecoderId VideoDecoderId_CrystalHD;
 
 NAMESPACE_END
 #endif //VIDEODECODER_H

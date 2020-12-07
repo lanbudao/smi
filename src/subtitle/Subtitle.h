@@ -3,7 +3,8 @@
 
 #include "sdk/global.h"
 #include "sdk/DPTR.h"
-#include "ByteArray.h"
+#include "sdk/mediainfo.h"
+#include "Packet.h"
 
 NAMESPACE_BEGIN
 
@@ -42,10 +43,14 @@ public:
 
     bool enabled() const;
     void setEnabled(bool b);
-    void setFile(const std::string &fileName);
+    void setFile(const std::string &name);
     void setCodec(const std::string &codec);
     void load();
-    bool processLine(const ByteArray &data, double pts, double duration);
+    bool processHeader(MediaInfo *info);
+    bool processLine(Packet *pkt);
+
+    void setTimestamp(double t);
+    SubtitleFrame frame();
 
 protected:
 

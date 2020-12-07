@@ -17,6 +17,7 @@ public:
     }
 
     bool enabled;
+    Filter::FilterType type;
 };
 
 class AudioFilterPrivate: public FilterPrivate

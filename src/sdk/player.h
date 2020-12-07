@@ -10,13 +10,14 @@
  */
 NAMESPACE_BEGIN
 
+class Packet;
 class Subtitle;
 class AudioFilter;
 class VideoFilter;
 class RenderFilter;
 class VideoRenderer;
 class PlayerPrivate;
-class FFPRO_EXPORT Player
+class SMI_EXPORT Player
 {
     DPTR_DECLARE_PRIVATE(Player)
 public:
@@ -96,6 +97,10 @@ public:
     void setRenderCallback(std::function<void(void* vo_opaque)> cb);
     VideoRenderer* setVideoRenderer(int w, int h, void* opaque = nullptr);
     void addVideoRenderer(VideoRenderer *renderer);
+    /**
+     * @brief remove renderer. If param is null, remove all.
+     */
+    void removeRenderer(VideoRenderer *renderer = nullptr);
     void resizeWindow(int w, int h);
 
     /* Filter below */
@@ -107,6 +112,7 @@ public:
     bool installFilter(VideoFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
     bool installFilter(RenderFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
 
+    bool setSubtitleStream(int stream);
     std::map<std::string, std::string> internalSubtitles() const;
     Subtitle* internalSubtitle();
     Subtitle* addExternalSubtitle(const std::string &fileName, bool enabled = false);
@@ -117,9 +123,14 @@ public:
     /* Call back */
     void setBufferProcessCallback(std::function<void(float p)> f);
     void setMediaStatusCallback(std::function<void(MediaStatus)> f);
+    void setStreamChangedCallback(std::function<void(MediaType type, int stream)> f);
+private:
+    friend class SubtitleFilter;
+    void setSubtitlePacketCallback(std::function<void(Packet* pkt)> f);
+    void setSubtitleHeaderCallback(std::function<void(MediaInfo*)> f);
 
 private:
-    class FFPRO_EXPORT DPTR_DECLARE(Player)
+    class SMI_EXPORT DPTR_DECLARE(Player)
 };
 
 NAMESPACE_END

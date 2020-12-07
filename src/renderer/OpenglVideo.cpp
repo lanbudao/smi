@@ -5,6 +5,8 @@
 #include "GeometryRenderer.h"
 #include "OpenglAide.h"
 #include "AVLog.h"
+#include "subtitlerender.h"
+//#include <GL/GLU.h>
 //#define TEST_YUV
 
 //传递顶点和材质坐标
@@ -45,6 +47,7 @@ public:
 		gr(nullptr),
 		user_shader(nullptr)
 	{
+        sub_render.setFontFile("E:/ht.ttf");
 	}
 	~OpenglVideoPrivate()
 	{
@@ -72,6 +75,7 @@ public:
 	GeometryRenderer* gr;
 	VideoShader *user_shader;
     Color background;
+    SubtitleRender sub_render;
 };
 
 void OpenglVideoPrivate::resetGL() {
@@ -433,10 +437,22 @@ void OpenglVideo::render(const RectF &target, const RectF& roi, const Matrix4x4&
         glDisable(GL_BLEND);
     d->material->unbind();
     shader->program()->unBind();
+
+    // subtitle test
+    //d->sub_render.drawText("Have a nice day\n hahahahaha");
 }
 
 void OpenglVideo::updateViewport()
 {
+    //glMatrixMode(GL_PROJECTION);
+    //glLoadIdentity();
+    //gluPerspective(90, 800.0f / 480.0f, 1, 1000);
+    //glMatrixMode(GL_MODELVIEW);
+    //glLoadIdentity();
+    //gluLookAt(0.0, 0.0, 800.0f / 2.0f, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+
+    //glRasterPos2i((long)(800 / 2 + -300), (long)(480 / 2 + 170));
+    //glTranslatef(800 / 2, 480 / 2, 0.0);
 }
 
 void OpenglVideo::fill(const Color &c)

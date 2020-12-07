@@ -139,7 +139,7 @@ StringList SubtitleDecoderFFmpeg::supportedCodecs()
     return supported_sub_extensions_ffmpeg();
 }
 
-SubtitleFrame SubtitleDecoderFFmpeg::processLine(const ByteArray &data, double pts, double duration)
+SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet& pkt)
 {
     DPTR_D(SubtitleDecoderFFmpeg);
 

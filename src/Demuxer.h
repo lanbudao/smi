@@ -8,12 +8,11 @@
 
 #include <string>
 
-struct AVFormatContext;
+typedef struct AVFormatContext AVFormatContext;
 typedef struct AVStream AVStream;
 
 NAMESPACE_BEGIN
 
-struct AVCodecContext;
 class DemuxerPrivate;
 class Demuxer
 {
@@ -33,6 +32,7 @@ public:
     void setMediaStreamDisable(MediaType type);
     int  load();
     void unload();
+    bool isLoaded();
     bool atEnd();
     void setEOF(bool eof);
     bool hasAttachedPic() const;
@@ -43,7 +43,6 @@ public:
 	void setSeekType(SeekType type); 
 	void setInterruptStatus(int interrupt);
 
-//    const Packet& packet() const;
     int  readFrame();
 
     AVFormatContext *formatCtx() const;
@@ -58,6 +57,11 @@ public:
 
     int stream() const;
     int streamIndex(MediaType type) const;
+    /**
+     * @brief set index of media stream. If index is -1, disable the stream.
+     * @return true or false
+     */
+    bool setStreamIndex(MediaType type, int index = -1);
     AVStream* stream(MediaType type) const;
     const Packet& packet() const;
 

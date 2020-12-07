@@ -56,6 +56,7 @@ void Player::prepare()
         d->mediaStatusChanged(Loaded);
     d->initRenderVideo();
     d->clock.setMaxDuration(d->demuxer->maxDuration());
+    d->applySubtitleStream();
     d->playInternal();
 }
 
@@ -254,6 +255,7 @@ VideoRenderer* Player::setVideoRenderer(int w, int h, void* opaque)
     renderer->setMediaInfo(&d->mediainfo); // for test
     renderer->resizeWindow(w, h);
     d->video_output_set.addOutput((AVOutput*)renderer);
+    d->renderToFilters.insert(std::make_pair(renderer, std::list<Filter*>()));
     return renderer;
 }
 
@@ -262,6 +264,12 @@ void Player::addVideoRenderer(VideoRenderer *renderer)
     DPTR_D(Player);
     renderer->setMediaInfo(&d->mediainfo);
     d->video_output_set.addOutput((AVOutput*)renderer);
+    d->renderToFilters.insert(std::make_pair(renderer, std::list<Filter*>()));
+}
+
+void Player::removeRenderer(VideoRenderer * renderer)
+{
+    //TODO
 }
 
 void Player::resizeWindow(int w, int h)
@@ -276,19 +284,36 @@ void Player::resizeWindow(int w, int h)
 bool Player::installFilter(AudioFilter *filter, int index)
 {
     DPTR_D(Player);
+    filter->setPlayer(this);
     return d->installFilter(filter, index);
 }
 
 bool Player::installFilter(VideoFilter * filter, VideoRenderer * render, int index)
 {
     DPTR_D(Player);
+    filter->setPlayer(this);
     return d->installFilter(filter, render, index);
 }
 
 bool Player::installFilter(RenderFilter * filter, VideoRenderer * render, int index)
 {
     DPTR_D(Player);
+    filter->setPlayer(this);
     return d->installFilter(filter, render, index);
+}
+
+bool Player::setSubtitleStream(int stream)
+{
+    DPTR_D(Player);
+    if (d->demuxer->streamIndex(MediaTypeSubtitle) == stream)
+        return true;
+    if (!d->demuxer->isLoaded())
+        return false;
+    if (!d->demuxer->setStreamIndex(MediaTypeSubtitle, stream))
+        return false;
+    if (d->mediaStreamChanged)
+        d->mediaStreamChanged(MediaTypeSubtitle, stream);
+    return d->applySubtitleStream();
 }
 
 std::map<string, string> Player::internalSubtitles() const
@@ -351,6 +376,25 @@ void Player::setMediaStatusCallback(std::function<void (MediaStatus)> f)
     DPTR_D(Player);
     d->mediaStatusChanged = std::move(f);
     d->demux_thread->setMediaStatusChangedCB(f);
+}
+
+void Player::setStreamChangedCallback(std::function<void(MediaType type, int stream)> f)
+{
+    DPTR_D(Player);
+    d->mediaStreamChanged = f;
+}
+
+void Player::setSubtitlePacketCallback(std::function<void(Packet* pkt)> f)
+{
+    DPTR_D(Player);
+    d->demux_thread->setSubtitlePacketCallback(f);
+}
+
+void Player::setSubtitleHeaderCallback(std::function<void(MediaInfo*)> f)
+{
+    DPTR_D(Player);
+    d->subtitleHeaderChanged = f;
+    d->applySubtitleStream();
 }
 
 NAMESPACE_END

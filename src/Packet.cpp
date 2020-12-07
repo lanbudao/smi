@@ -113,7 +113,7 @@ Packet Packet::fromAVPacket(const AVPacket *packet, double time_base)
         pkt.duration = 0;
     pkt.size = packet->size;
 
-    AVPacket *p = pkt.avpacket();
+    AVPacket *p = pkt.avPacket();
     av_packet_ref(p, packet);  //properties are copied internally
     //p->pts = int64_t(pkt.pts * 1000.0);
     //p->dts = int64_t(pkt.dts * 1000.0);
@@ -158,7 +158,7 @@ Packet Packet::createFlush()
     return pkt;
 }
 
-AVPacket *Packet::avpacket()
+AVPacket *Packet::avPacket()
 {
     DPTR_D(Packet);
     return &d->avpkt;

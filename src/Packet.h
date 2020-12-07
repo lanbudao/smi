@@ -34,14 +34,14 @@ public:
     static Packet createFlush();
 
     bool containKeyFrame, isCorrupted;
-    double pts, dts, duration;
+    double pts, dts, duration; //in second
     int64_t pos;
     //ByteArray data;
     std::string attach;
     int size;
     mutable int serial;
 
-    AVPacket *avpacket();
+    AVPacket *avPacket();
 
 private:
     DPTR_DECLARE(Packet)

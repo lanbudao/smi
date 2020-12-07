@@ -2,6 +2,7 @@
 #include "SubtitleDecoder.h"
 #include "AVLog.h"
 #include "CThread.h"
+#include "util/mkid.h"
 
 NAMESPACE_BEGIN
 
@@ -13,11 +14,14 @@ private:
     SubtitlePrivate *priv;
 };
 
+SubtitleDecoderId SubtitleDecoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+
 class SubtitlePrivate
 {
 public:
     SubtitlePrivate():
         enabled(false),
+        time_stamp(0),
         decoder(nullptr),
         load_async(nullptr)
     {
@@ -43,29 +47,28 @@ public:
 
     }
 
-    void loadInternal()
-    {
-        FILE *f = fopen(fileName.c_str(), "r");
-        if (!f)
-            return;
-        //TODO
-
-        fclose(f);
-    }
+    void loadInternal();
 
     bool enabled;
     std::string fileName;
     std::string codec;
+    double time_stamp;
     SubtitleDecoder *decoder;
     LoadAsync *load_async;
 };
+
+void SubtitlePrivate::loadInternal()
+{
+
+}
 
 void LoadAsync::run()
 {
     priv->loadInternal();
 }
 
-Subtitle::Subtitle()
+Subtitle::Subtitle():
+    d_ptr(new SubtitlePrivate)
 {
 
 }
@@ -87,13 +90,13 @@ void Subtitle::setEnabled(bool b)
     d->enabled = b;
 }
 
-void Subtitle::setFile(const string &fileName)
+void Subtitle::setFile(const std::string &name)
 {
     DPTR_D(Subtitle);
-    d->fileName = fileName;
+    d->fileName = name;
 }
 
-void Subtitle::setCodec(const string &codec)
+void Subtitle::setCodec(const std::string &codec)
 {
     DPTR_D(Subtitle);
     d->codec = codec;
@@ -108,11 +111,28 @@ void Subtitle::load()
     d->load_async->run();
 }
 
-bool Subtitle::processLine(const ByteArray &data, double pts, double duration)
+bool Subtitle::processHeader(MediaInfo *info)
 {
     DPTR_D(Subtitle);
+    return d->decoder->processHeader(info);
+}
 
+bool Subtitle::processLine(Packet *pkt)
+{
+    DPTR_D(Subtitle);
+    SubtitleFrame frame = d->decoder->processLine(pkt);
     return true;
+}
+
+void Subtitle::setTimestamp(double t)
+{
+    DPTR_D(Subtitle);
+    d->time_stamp = t;
+}
+
+SubtitleFrame Subtitle::frame()
+{
+    return SubtitleFrame();
 }
 
 NAMESPACE_END

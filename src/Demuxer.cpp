@@ -327,6 +327,12 @@ void Demuxer::unload()
     }
 }
 
+bool Demuxer::isLoaded()
+{
+    DPTR_D(const Demuxer);
+    return d->format_ctx && (stream(MediaTypeAudio) || stream(MediaTypeVideo) || stream(MediaTypeSubtitle));
+}
+
 bool Demuxer::atEnd()
 {
     DPTR_D(const Demuxer);
@@ -461,7 +467,10 @@ void Demuxer::initMediaInfo()
 {
     DPTR_D(Demuxer);
     unsigned int i;
-
+    
+    if (!d->media_info)
+        return;
+    memset(d->media_info, 0, sizeof(*d->media_info));
     d->media_info->url = d->url;
     d->media_info->bit_rate = d->format_ctx->bit_rate;
     d->media_info->start_time = d->format_ctx->start_time / AV_TIME_BASE;
@@ -528,6 +537,23 @@ void Demuxer::initMediaInfo()
             if (d->stream_index[MediaTypeVideo] == i) {
                 d->media_info->video = &d->media_info->videos[d->media_info->videos.size() - 1];
             }
+        } else if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
+            SubtitleStreamInfo info;
+            info.stream = i;
+            info.start_time = st->start_time == AV_NOPTS_VALUE ?
+                0 : FORCE_INT64(st->start_time * av_q2d(st->time_base) * 1000);
+            info.duration = st->duration = AV_NOPTS_VALUE ?
+                0 : FORCE_INT64(st->duration * av_q2d(st->time_base) * 1000);
+            info.frames = st->nb_frames;
+            /* Codec Paras */
+            info.codec_name = avcodec_get_name(st->codecpar->codec_id);
+            info.time_base = Rational(st->time_base.num, st->time_base.den);
+            info.extradata = st->codecpar->extradata;
+            info.extradata_size = st->codecpar->extradata_size;
+            d->media_info->subtitles.push_back(info);
+            if (d->stream_index[MediaTypeSubtitle] == i) {
+                d->media_info->subtitle = &d->media_info->subtitles[d->media_info->subtitles.size() - 1];
+            }
         }
     }
 }
@@ -565,6 +591,43 @@ int Demuxer::streamIndex(MediaType type) const
 {
     DPTR_D(const Demuxer);
     return d->stream_index[type];
+}
+
+bool Demuxer::setStreamIndex(MediaType type, int index)
+{
+    DPTR_D(Demuxer);
+    if (index < 0) {
+        d->stream_index[type] = index;
+        return true;
+    }
+    if (type == MediaTypeAudio) {
+        for (int i = 0; i < d->media_info->audios.size(); ++i) {
+            if (d->media_info->audios[i].stream == index) {
+                d->stream_index[type] = index;
+                d->media_info->audio = &d->media_info->audios[i];
+                return true;
+            }
+        }
+    }
+    else if (type == MediaTypeVideo) {
+        for (int i = 0; i < d->media_info->videos.size(); ++i) {
+            if (d->media_info->videos[i].stream == index) {
+                d->stream_index[type] = index;
+                d->media_info->video = &d->media_info->videos[i];
+                return true;
+            }
+        }
+    }
+    else if (type == MediaTypeSubtitle) {
+        for (int i = 0; i < d->media_info->subtitles.size(); ++i) {
+            if (d->media_info->subtitles[i].stream == index) {
+                d->stream_index[type] = index;
+                d->media_info->subtitle = &d->media_info->subtitles[i];
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 AVStream* Demuxer::stream(MediaType type) const

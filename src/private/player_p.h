@@ -14,8 +14,8 @@
 #include "AVLog.h"
 #include "AVClock.h"
 #include "VideoRenderer.h"
-#include "Subtitle.h"
-#include "Filter.h"
+#include "subtitle/Subtitle.h"
+#include "filter/Filter.h"
 
 NAMESPACE_BEGIN
 
@@ -93,6 +93,8 @@ public:
 
     bool insertFilter(std::list<Filter*> &filters, Filter* f, int index);
 
+    bool applySubtitleStream();
+
     void onSeekFinished(void*) { seeking = false; }
 
     std::string url;
@@ -140,6 +142,8 @@ public:
     MediaInfo mediainfo;
 
     std::function<void(MediaStatus s)> mediaStatusChanged;
+    std::function<void(MediaType type, int stream)> mediaStreamChanged;
+    std::function<void(MediaInfo*)> subtitleHeaderChanged;
 };
 
 void PlayerPrivate::playInternal()
@@ -351,9 +355,10 @@ inline bool PlayerPrivate::installFilter(RenderFilter * filter, VideoRenderer * 
     else { // install to every videorender
         std::map<VideoRenderer*, std::list<Filter*>>::iterator it = renderToFilters.begin();
         for (; it != renderToFilters.end(); ++it) {
-            if (!insertFilter(renderToFilters[render], filter, index))
+            VideoRenderer *r = (VideoRenderer *)(it->first);
+            if (!insertFilter(it->second, filter, index))
                 return false;
-            render->updateFilters(renderToFilters[render]);
+            r->updateFilters(it->second);
         }
     }
     return true;
@@ -378,6 +383,16 @@ inline bool PlayerPrivate::insertFilter(std::list<Filter*>& filters, Filter * f,
         return true;
     filters.remove(f);
     filters.insert(it_dst, f);
+    return true;
+}
+
+bool PlayerPrivate::applySubtitleStream()
+{
+    if (!mediainfo.subtitle)
+        return false;
+    if (subtitleHeaderChanged) {
+        subtitleHeaderChanged(&mediainfo);
+    }
     return true;
 }
 

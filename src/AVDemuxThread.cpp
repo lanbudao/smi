@@ -73,6 +73,7 @@ public:
     /* callback */
     std::function<void(float p)> bufferProcessChanged;
     std::function<void(MediaStatus s)> mediaStatusChanged;
+    std::function<void(Packet*pkt)> subtitlePacketChanged;
 };
 
 AVDemuxThread::AVDemuxThread():
@@ -229,6 +230,11 @@ void AVDemuxThread::setBufferProcessChangedCB(std::function<void(float p)> f)
     d_func()->bufferProcessChanged = f;
 }
 
+void AVDemuxThread::setSubtitlePacketCallback(std::function<void(Packet*pkt)> f)
+{
+    d_func()->subtitlePacketChanged = f;
+}
+
 void AVDemuxThread::run()
 {
     DPTR_D(AVDemuxThread);
@@ -346,7 +352,8 @@ void AVDemuxThread::run()
             }
         }
         else if (stream == demuxer->streamIndex(MediaTypeSubtitle)) {
-
+            if (d->subtitlePacketChanged)
+                d->subtitlePacketChanged(&pkt);
         }
         this->updateBufferStatus();
     }

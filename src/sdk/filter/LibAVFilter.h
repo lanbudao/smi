@@ -12,7 +12,7 @@ NAMESPACE_BEGIN
 class Frame;
 class AudioFrame;
 class LibAVFilterPrivate;
-class FFPRO_EXPORT LibAVFilter
+class SMI_EXPORT LibAVFilter
 {
 public:
     explicit LibAVFilter();
@@ -44,7 +44,7 @@ protected:
 };
 
 class LibAVFilterAudioPrivate;
-class FFPRO_EXPORT LibAVFilterAudio: public LibAVFilter, public AudioFilter
+class SMI_EXPORT LibAVFilterAudio: public LibAVFilter, public AudioFilter
 {
     DPTR_DECLARE_PRIVATE(LibAVFilterAudio)
 public:
@@ -58,7 +58,7 @@ protected:
 };
 
 class LibAVFilterVideoPrivate;
-class FFPRO_EXPORT LibAVFilterVideo : public LibAVFilter, public VideoFilter
+class SMI_EXPORT LibAVFilterVideo : public LibAVFilter, public VideoFilter
 {
     DPTR_DECLARE_PRIVATE(LibAVFilterVideo)
 public:

@@ -51,6 +51,19 @@ typedef struct VideoStreamInfo_ {
     Rational time_base;
 } VideoStreamInfo;
 
+typedef struct SubtitleStreamInfo_ {
+    int stream;
+    int64_t start_time; /* ms */
+    int64_t duration; /* ms */
+    int64_t frames;
+
+    /* Codec Paras */
+    std::string codec_name, codec_long;
+    uint8_t *extradata;
+    int extradata_size;
+    Rational time_base;
+} SubtitleStreamInfo;
+
 typedef struct MediaInfo_ {
     std::string url;
     int64_t start_time;
@@ -61,9 +74,11 @@ typedef struct MediaInfo_ {
 
     std::vector<AudioStreamInfo> audios;
     std::vector<VideoStreamInfo> videos;
+    std::vector<SubtitleStreamInfo> subtitles;
 
     AudioStreamInfo* audio = nullptr;
     VideoStreamInfo* video = nullptr;
+    SubtitleStreamInfo* subtitle = nullptr;
 
 } MediaInfo;
 

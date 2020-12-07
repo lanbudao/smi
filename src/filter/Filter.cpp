@@ -1,4 +1,4 @@
-#include "Filter.h"
+#include "sdk/filter/Filter.h"
 #include "Filter_p.h"
 #include "sdk/player.h"
 
@@ -26,16 +26,28 @@ void Filter::setEnabled(bool b)
     d->enabled = b;
 }
 
+Filter::FilterType Filter::type() const
+{
+    DPTR_D(const Filter);
+    return d->type;
+}
+
+void Filter::setType(FilterType t)
+{
+    DPTR_D(Filter);
+    d->type = t;
+}
+
 VideoFilter::VideoFilter():
     Filter(new VideoFilterPrivate)
 {
-
+    setType(Filter::Video);
 }
 
 VideoFilter::VideoFilter(VideoFilterPrivate *d):
     Filter(d)
 {
-
+    setType(Filter::Video);
 }
 
 VideoFilter::~VideoFilter()
@@ -62,12 +74,12 @@ AudioFilter::AudioFilter():
 AudioFilter::AudioFilter(AudioFilterPrivate *d):
     Filter(d)
 {
-
+    setType(Filter::Audio);
 }
 
 AudioFilter::~AudioFilter()
 {
-
+    setType(Filter::Audio);
 }
 
 void AudioFilter::installTo(Player *player)
@@ -83,13 +95,13 @@ void AudioFilter::apply(MediaInfo * info, AudioFrame * frame)
 RenderFilter::RenderFilter() :
     Filter(new RenderFilterPrivate)
 {
-
+    setType(Filter::Render);
 }
 
 RenderFilter::RenderFilter(RenderFilterPrivate *d) :
     Filter(d)
 {
-
+    setType(Filter::Render);
 }
 
 RenderFilter::~RenderFilter()
@@ -100,5 +112,9 @@ RenderFilter::~RenderFilter()
 void RenderFilter::installTo(Player *player)
 {
     player->installFilter(this);
+}
+void RenderFilter::apply(MediaInfo * info, VideoFrame * frame)
+{
+    process(info, frame);
 }
 NAMESPACE_END

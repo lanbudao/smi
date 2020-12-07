@@ -26,18 +26,18 @@
 
 using namespace std;
 
-#ifdef BUILD_FFPRO_STATIC
-#define FFPRO_EXPORT
+#ifdef BUILD_SMI_STATIC
+#define SMI_EXPORT
 #else
 #ifdef BUILD_FFPRO_LIB
-#  undef FFPRO_EXPORT
-#  define FFPRO_EXPORT __declspec(dllexport)
+#  undef SMI_EXPORT
+#  define SMI_EXPORT __declspec(dllexport)
 #else
-#  undef FFPRO_EXPORT
-#  define FFPRO_EXPORT __declspec(dllimport)
+#  undef SMI_EXPORT
+#  define SMI_EXPORT __declspec(dllimport)
 #endif
 #endif
-#define PU_AV_PRIVATE_EXPORT FFPRO_EXPORT
+#define PU_AV_PRIVATE_EXPORT SMI_EXPORT
 #define PU_DECL_DEPRECATED __declspec(deprecated)
 
 #define PU_NO_COPY final
@@ -45,7 +45,7 @@ using namespace std;
 #define PU_SIGNALS public
 #define PU_EMIT
 
-#define NAMESPACE_BEGIN namespace FFPROC {
+#define NAMESPACE_BEGIN namespace SMI {
 #define NAMESPACE_END }
 
 #define SAFE_DELETE(p) if (p) {delete p; p = nullptr;} 
