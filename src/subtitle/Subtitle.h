@@ -6,31 +6,35 @@
 #include "sdk/mediainfo.h"
 #include "Packet.h"
 
+struct AVFrame;
 NAMESPACE_BEGIN
 
 enum SubtitleType {
     SubtitleText,
-    SubtitleAss,
     SubtitlePixmap
 };
 
-struct SubtitleFrame {
-    SubtitleFrame():
-        begin(0.0),
-        end(0.0),
-        type(SubtitleText)
-    {
+class SubtitleFramePrivate;
+class SubtitleFrame
+{
+    DPTR_DECLARE_PRIVATE(SubtitleFrame);
+public:
+    SubtitleFrame();
+    ~SubtitleFrame();
 
-    }
+    bool isValid() const { return start < stop; }
+    bool operator < (const SubtitleFrame &f) const { return stop < f.stop; }
+    inline bool operator < (double t) const { return stop < t; }
+    void push_back(const std::string &text);
+    const std::vector<std::string> &texts() const;
+    const std::vector<AVFrame*> &images() const;
+    void reset();
 
-    bool isValid() const {return begin < end;}
-    operator bool() const {return isValid();}
-    inline bool operator < (const SubtitleFrame &f) const {return end < f.end;}
-    inline bool operator < (double t) const {return end < t;}
-
+    double start, stop;
     SubtitleType type;
-    double begin, end;
-    std::string text;
+
+private:
+    DPTR_DECLARE(SubtitleFrame);
 };
 
 class SubtitlePrivate;

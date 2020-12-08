@@ -31,14 +31,15 @@ private:
     AVCodecContext *codec_ctx;
     Demuxer sub_reader;
     std::list<SubtitleFrame> m_frames;
-
+    MediaInfo *media_info;
 };
 
 extern SubtitleDecoderId SubtitleDecoderId_FFmpeg;
 FACTORY_REGISTER(SubtitleDecoder, FFmpeg, "FFmpeg")
 
-SubtitleDecoderFFmpeg::SubtitleDecoderFFmpeg()
-    : codec_ctx(nullptr)
+SubtitleDecoderFFmpeg::SubtitleDecoderFFmpeg():
+    codec_ctx(nullptr),
+    media_info(nullptr)
 {
 }
 
@@ -191,6 +192,7 @@ bool SubtitleDecoderFFmpeg::processHeader(MediaInfo *info)
 {
     if (!info && !info->subtitle)
         return false;
+    media_info = info;
     std::string codec = info->subtitle->codec_name;
     uint8_t *data = info->subtitle->extradata;
     int size = info->subtitle->extradata_size;
@@ -247,23 +249,30 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet *pkt)
     }
     SubtitleFrame frame;
     // relative to packet pts, in ms
-    frame.begin = pkt->pts + FORCE_DOUBLE(sub.start_display_time) / 1000;
-    frame.end = pkt->pts + FORCE_DOUBLE(sub.end_display_time) / 1000;
+    double pts;
+    if (sub.pts != AV_NOPTS_VALUE && media_info && media_info->subtitle)
+        pts = sub.pts / av_q2d(
+            {
+                media_info->subtitle->time_base.num,
+                media_info->subtitle->time_base.den,
+            });
+    else
+        pts = pkt->pts;
+    frame.start = pts + FORCE_DOUBLE(sub.start_display_time) / 1000;
+    frame.stop = pts + FORCE_DOUBLE(sub.end_display_time) / 1000;
     for (unsigned i = 0; i < sub.num_rects; i++) {
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:
             //qDebug("ass frame: %s", sub.rects[i]->ass);
-            frame.text.append(PlainText::fromAss(sub.rects[i]->ass));
-            frame.text.append("\n");
+            frame.push_back(PlainText::fromAss(sub.rects[i]->ass));
             break;
         case SUBTITLE_TEXT:
             //qDebug("txt frame: %s", sub.rects[i]->text);
-            frame.text.append(sub.rects[i]->text);
-            frame.text.append("\n");
+            frame.push_back(sub.rects[i]->text);
             break;
         case SUBTITLE_BITMAP:
             //sub.rects[i]->w > 0 && sub.rects[i]->h > 0
-            //qDebug("bmp sub");
+            //AVDebug("bmp sub");
             frame = SubtitleFrame(); // not support bmp subtitle now
             break;
         default:
