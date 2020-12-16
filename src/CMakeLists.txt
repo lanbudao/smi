@@ -236,7 +236,11 @@ list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})
 
 link_directories(${CMAKE_SOURCE_DIR}/depends/lib/${CMAKE_INTDIR})
-message(EXTRA_LIBS: ${EXTRA_LIBS})
+foreach (LIB ${EXTRA_LIBS})
+  if (${LIB})
+	message(EXTRA_LIBS: ${EXTRA_LIBS})
+  endif()
+endforeach()
 
 # Output path
 set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
@@ -245,9 +249,13 @@ add_library(${MODULE} SHARED ${SOURCES} ${HEADERS})
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
 
 #find_library(LIB_AVFORMAT avformat ${FFMPEG_LIB})
-target_link_libraries(${MODULE} ${EXTRA_LIBS} soundtouch_static opengl32)
+target_link_libraries(${MODULE} 
+	LINK_PRIVATE ${EXTRA_LIBS} 
+	LINK_PRIVATE soundtouch_static
+	LINK_PUBLIC opengl32)
 if (EXISTS ${FREETYPE_DIR})
-	target_link_libraries(${MODULE} ${EXTRA_LIBS} soundtouch_static ftgl_static freetype)
+	target_link_libraries(${MODULE} 
+		LINK_PRIVATE ftgl_static freetype)
 endif()
 
 set_target_properties(${MODULE} PROPERTIES

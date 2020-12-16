@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-project(sdlplay)
+#project(sdlplay)
 set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
