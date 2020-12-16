@@ -162,8 +162,8 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet& pkt)
         return SubtitleFrame();
     }
     SubtitleFrame frame;
-    frame.begin = pts + (double)sub.start_display_time / 1000;
-    frame.end = pts + (double)sub.end_display_time / 1000;
+    frame.start = pts + (double)sub.start_display_time / 1000;
+    frame.stop = pts + (double)sub.end_display_time / 1000;
     for (unsigned i = 0; i < sub.num_rects; i++) {
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:

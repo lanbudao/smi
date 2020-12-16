@@ -3,9 +3,10 @@
 #include "sdk/player.h"
 #include "sdk/AVLog.h"
 #include "sdk/filter/LibAVFilter.h"
+#include "sdk/filter/subtitlefilter.h"
 #include "SDL.h"
 
-using namespace FFPROC;
+using namespace SMI;
 
 const Uint32 update_event = SDL_USEREVENT + 10;
 
@@ -31,24 +32,26 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
 	SDL_GL_SwapWindow(window);
 
-    //FFPROC::setLogOut(true);
-    //FFPROC::setLogFile("E:/sdl2play-log");
+    //SMI::setLogOut(true);
+    //SMI::setLogFile("E:/sdl2play-log");
     char* fileName = argv[1];
+    //char* fileName = "E:/media/Heartbeats.mp3";
+    //char* fileName = "E:/media/冰河世纪：猛犸象的圣诞_BD中字_sub.mp4";
     AVDebug("The name of file to play: %s\n", fileName);
 
     Player *player = new Player();
     player->setMedia(fileName);
-    player->setVideoRenderer(w, h);
+    VideoRenderer* render = player->setVideoRenderer(w, h);
 //    player->setWantedStreamSpec(MediaTypeAudio, "3");
-    player->setMediaStatusCallback([window](FFPROC::MediaStatus status){
+    player->setMediaStatusCallback([window](SMI::MediaStatus status){
         switch (status) {
-        case FFPROC::Loaded:
+        case SMI::Loaded:
             SDL_SetWindowTitle(window, "LoadedMedia");
             break;
-        case FFPROC::End:
+        case SMI::End:
             SDL_SetWindowTitle(window, "EndOfMedia");
             break;
-        case FFPROC::Buffered:
+        case SMI::Buffered:
             SDL_SetWindowTitle(window, "Buffered");
             break;
         }
@@ -76,8 +79,16 @@ int main(int argc, char *argv[])
 
     LibAVFilterVideo* vfilter = new LibAVFilterVideo;
     vfilter->setOptions("curves=vintage");
-    //player->installFilter(vfilter);
+    //player->installFilter(vfilter, render);
     
+    SubtitleFilter *sub_filter = new SubtitleFilter;
+    sub_filter->setFile("E:/[冰河世纪：猛犸象的圣诞节].Ice.Age.A.Mammoth.Christmas.2011.720p.BluRay.x264-aAF.Eng.srt");
+    //player->installFilter(sub_filter);
+
+    SubtitleFilter *sub_internal_filter = new SubtitleFilter;
+    //sub_internal_filter->setPlayer(player);
+    //player->installFilter(sub_internal_filter);
+
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");
     if (icon) {
@@ -151,6 +162,7 @@ int main(int argc, char *argv[])
     delete player;
     delete afilter;
     delete vfilter;
+    delete sub_filter;
     SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
     AVDebug("player uninitialize\n");

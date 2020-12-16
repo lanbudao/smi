@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-project(ffproc)
+project(smi)
 # Use C++11
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
@@ -19,5 +19,6 @@ set(FFPROC_MINOR 0)
 set(FFPROC_PATCH 0)
 set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
 
+add_subdirectory(depends)
 add_subdirectory(src)
 add_subdirectory(examples)

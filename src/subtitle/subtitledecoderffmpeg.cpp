@@ -248,6 +248,7 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet *pkt)
         return SubtitleFrame();
     }
     SubtitleFrame frame;
+    frame.type = (sub.format == 0) ? SubtitlePixmap : SubtitleText;
     // relative to packet pts, in ms
     double pts;
     if (sub.pts != AV_NOPTS_VALUE && media_info && media_info->subtitle)

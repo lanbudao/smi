@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 2.8.4)
 
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+project(sdlplay)
+set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
 
-link_directories(${FFMPEG_DIR}/bin ${SDL_DIR}/lib)
-include_directories(${FFMPEG_DIR}/include
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
+link_directories(${SDL_DIR}/lib ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
+include_directories(
     ${SDL_DIR}/include
-    ${PROJECT_SOURCE_DIR}/src)
+    ${CMAKE_SOURCE_DIR}/src)
 
 add_executable(sdl2play sdl2play.cpp)
 
-target_link_libraries(sdl2play ffproc sdl2 sdl2main)
+target_link_libraries(sdl2play smi sdl2 sdl2main)
