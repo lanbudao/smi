@@ -289,7 +289,7 @@ bool PlayerPrivate::setupVideoThread()
         video_thread->setMediaInfo(&mediainfo);
 		video_thread->setOutputSet(&video_output_set);
 		video_thread->setClock(&clock);
-        clock.init(SyncToVideo, audio_thread->packets()->serialAddr());
+        clock.init(SyncToVideo, video_thread->packets()->serialAddr());
 		demux_thread->setVideoThread(video_thread);
 	}
 	video_thread->setDecoder(video_dec);

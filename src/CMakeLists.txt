@@ -79,7 +79,7 @@ ELSEIF (UNIX)
     MESSAGE(STATUS "Now is UNIX-like OS's.")
 ENDIF()
 
-list(APPEND EXTRA_DEFS -DBUILD_FFPRO_LIB -D__STDC_CONSTANT_MACROS)
+list(APPEND EXTRA_DEFS -DBUILD_SMI_LIB -D__STDC_CONSTANT_MACROS)
 
 #file(GLOB SDK_HEADERS *.h)
 #file(GLOB SDK_HEADERS_SDK sdk/*.h)
@@ -235,7 +235,7 @@ list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
 list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})
 
-link_directories(${CMAKE_SOURCE_DIR}/depends/lib/${CMAKE_INTDIR})
+link_directories(${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
 foreach (LIB ${EXTRA_LIBS})
   if (${LIB})
 	message(EXTRA_LIBS: ${EXTRA_LIBS})
@@ -255,7 +255,7 @@ target_link_libraries(${MODULE}
 	LINK_PUBLIC opengl32)
 if (EXISTS ${FREETYPE_DIR})
 	target_link_libraries(${MODULE} 
-		LINK_PRIVATE ftgl_static freetype)
+		LINK_PRIVATE ftgl freetype)
 endif()
 
 set_target_properties(${MODULE} PROPERTIES

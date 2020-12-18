@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.4)
 
 project(ftgl)
-set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
+set(PROJECT_VERSION ${SMI_MAJOR}.${SMI_MINOR}.${SMI_PATCH})
 
 set(MODULE ftgl)
 
@@ -12,7 +12,7 @@ set(MODULE ftgl)
 #endif(CMAKE_COMPILER_IS_GNUCXX)
 
 list(APPEND EXTRA_DEFS -DSMI_HAVE_FTGL=1 -D__STDC_CONSTANT_MACROS)
-LIST(APPEND EXTRA_DEFS -DFTGL_LIBRARY_STATIC)
+LIST(APPEND EXTRA_DEFS -DFTGL_LIBRARY)
 
 # Check freetype modules =0976
 if (EXISTS ${FREETYPE_DIR})
@@ -119,14 +119,14 @@ list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})
 		
 # Output path
-set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/depends/lib/${CMAKE_INTDIR})
-add_library(${MODULE} STATIC ${SOURCES} ${HEADERS})
+set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
+add_library(${MODULE} SHARED ${SOURCES} ${HEADERS})
 
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
-
-target_link_libraries(${MODULE} ${LIB_FREETYPE})
+message(LIB_FREETYPE: ${LIB_FREETYPE})
+target_link_libraries(${MODULE} ${LIB_FREETYPE} opengl32 glu32)
 
 set_target_properties(${MODULE} PROPERTIES
         VERSION 1.0
         SOVERSION 1.0
-        OUTPUT_NAME ftgl_static)
+        OUTPUT_NAME ftgl)

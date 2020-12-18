@@ -164,13 +164,13 @@ static const struct {
     { VideoFormat::Format_YVYU, AV_PIX_FMT_YVYU422 },
 #endif
 // 2014-03-16 - 6b1ca17 / 1481d24 - lavu 52.67.100 / 53.6.0 before ffmpeg2.2 libav11 RGBA64_LIBAV
-#if (FFPRO_USE_FFMPEG(LIBAVUTIL) || LIBAV_MODULE_CHECK(LIBAVUTIL, 53, 6, 0))
+#if (SMI_USE_FFMPEG(LIBAVUTIL) || LIBAV_MODULE_CHECK(LIBAVUTIL, 53, 6, 0))
     { VideoFormat::Format_RGBA64BE, AV_PIX_FMT_RGBA64BE },  ///< packed RGBA 16:16:16:16, 64bpp, 16R, 16G, 16B, 16A, the 2-byte value for each R/G/B/A component is stored as big-endian
     { VideoFormat::Format_RGBA64LE, AV_PIX_FMT_RGBA64LE },  ///< packed RGBA 16:16:16:16, 64bpp, 16R, 16G, 16B, 16A, the 2-byte value for each R/G/B/A component is stored as little-endian
     { VideoFormat::Format_BGRA64BE, AV_PIX_FMT_BGRA64BE },  ///< packed RGBA 16:16:16:16, 64bpp, 16B, 16G, 16R, 16A, the 2-byte value for each R/G/B/A component is stored as big-endian
     { VideoFormat::Format_BGRA64LE, AV_PIX_FMT_BGRA64LE },  ///< packed RGBA 16:16:16:16, 64bpp, 16B, 16G, 16R, 16A, the 2-byte value for each R/G/B/A component is stored as little-endian
 #endif
-#if FFPRO_USE_FFMPEG(LIBAVUTIL) //still use rgba formats but check hasAplha is required
+#if SMI_USE_FFMPEG(LIBAVUTIL) //still use rgba formats but check hasAplha is required
     { VideoFormat::Format_ARGB32, AV_PIX_FMT_0RGB },      ///< packed RGB 8:8:8, 32bpp, 0RGB0RGB...
     { VideoFormat::Format_RGBA32, AV_PIX_FMT_RGB0 },      ///< packed RGB 8:8:8, 32bpp, RGB0RGB0...
     { VideoFormat::Format_ABGR32, AV_PIX_FMT_0BGR },      ///< packed BGR 8:8:8, 32bpp, 0BGR0BGR...
@@ -206,10 +206,10 @@ static const struct {
     { VideoFormat::Format_BGR32, AV_PIX_FMT_BGR32 }, //auto endian
     { VideoFormat::Format_RGB48, AV_PIX_FMT_RGB48 },   ///< packed RGB 16:16:16, 48bpp, 16R, 16G, 16B, the 2-byte value for each R/G/B component is stored as big-endian
     { VideoFormat::Format_BGR48, AV_PIX_FMT_BGR48 },   ///< packed RGB 16:16:16, 48bpp, 16B, 16G, 16R, the 2-byte value for each R/G/B component is stored as big-endian
-#if FFPRO_USE_FFMPEG(LIBAVUTIL)
+#if SMI_USE_FFMPEG(LIBAVUTIL)
     { VideoFormat::Format_RGBA64, AV_PIX_FMT_RGBA64 },
     { VideoFormat::Format_BGRA64, AV_PIX_FMT_BGRA64 },
-#endif //FFPRO_USE_FFMPEG(LIBAVUTIL)
+#endif //SMI_USE_FFMPEG(LIBAVUTIL)
     { VideoFormat::Format_VYUY, AV_PIX_FMT_UYVY422 }, // FIXME: hack for invalid ffmpeg formats
 
     { VideoFormat::Format_VYU, AV_PIX_FMT_RGB32 },

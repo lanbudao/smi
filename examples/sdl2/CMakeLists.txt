@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.4)
 
 #project(sdlplay)
-set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
+set(PROJECT_VERSION ${SMI_MAJOR}.${SMI_MINOR}.${SMI_PATCH})
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin)
 link_directories(${SDL_DIR}/lib ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})

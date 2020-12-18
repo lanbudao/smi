@@ -14,10 +14,10 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /SAFESEH:NO")
 
 include(3rdparty.cmake)
 # Set Version
-set(FFPROC_MAJOR 1)
-set(FFPROC_MINOR 0)
-set(FFPROC_PATCH 0)
-set(PROJECT_VERSION ${FFPROC_MAJOR}.${FFPROC_MINOR}.${FFPROC_PATCH})
+set(SMI_MAJOR 1)
+set(SMI_MINOR 0)
+set(SMI_PATCH 0)
+set(PROJECT_VERSION ${SMI_MAJOR}.${SMI_MINOR}.${SMI_PATCH})
 
 add_subdirectory(depends)
 add_subdirectory(src)

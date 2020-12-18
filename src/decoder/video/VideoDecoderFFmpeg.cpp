@@ -202,12 +202,12 @@ VideoDecoderId VideoDecoderFFmpeg::id() const
 
 std::string VideoDecoderFFmpeg::description() const
 {
-    const int patch = FFPRO_VERSION_PATCH((int)avcodec_version());
+    const int patch = SMI_VERSION_PATCH((int)avcodec_version());
     return "";
 //    return Util::sformat("%s avcodec %d->%d->%d",
 //            (patch >= 100 ? "FFmpeg" : "Libav"),
-//            (FFPRO_VERSION_MAJOR((int)avcodec_version())),
-//            (FFPRO_VERSION_MINOR((int)avcodec_version())),
+//            (SMI_VERSION_MAJOR((int)avcodec_version())),
+//            (SMI_VERSION_MINOR((int)avcodec_version())),
 //            patch);
 }
 

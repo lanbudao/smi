@@ -1,8 +1,8 @@
 /******************************************************************************
-    FFPRO:  A lightweight player based on ffmpeg and portaudio
+    SMI:  A lightweight player based on ffmpeg and portaudio
     Copyright (C) 2012-2020 lanbudao <theartedly@gmail.com>
 
-*   This file is part of FFPRO
+*   This file is part of SMI
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@ using namespace std;
 #ifdef BUILD_SMI_STATIC
 #define SMI_EXPORT
 #else
-#ifdef BUILD_FFPRO_LIB
+#ifdef BUILD_SMI_LIB
 #  undef SMI_EXPORT
 #  define SMI_EXPORT __declspec(dllexport)
 #else
@@ -67,19 +67,19 @@ using namespace std;
 #define FORCE_FLOAT(x) static_cast<float>(x)
 #define FORCE_DOUBLE(x) static_cast<double>(x)
 
-#define FFPRO_MAJOR 1
-#define FFPRO_MINOR 0
-#define FFPRO_PATCH 0
+#define SMI_MAJOR 1
+#define SMI_MINOR 0
+#define SMI_PATCH 0
 
 
-#define FFPRO_VERSION_MAJOR(V) ((V & 0xff0000) >> 16)
-#define FFPRO_VERSION_MINOR(V) ((V & 0xff00) >> 8)
-#define FFPRO_VERSION_PATCH(V) (V & 0xff)
+#define SMI_VERSION_MAJOR(V) ((V & 0xff0000) >> 16)
+#define SMI_VERSION_MINOR(V) ((V & 0xff00) >> 8)
+#define SMI_VERSION_PATCH(V) (V & 0xff)
 
-#define FFPRO_VERSION_CHK(major, minor, patch) \
+#define SMI_VERSION_CHK(major, minor, patch) \
     (((major & 0xff) << 16) | ((minor & 0xff) << 8) | (patch & 0xff))
 
-#define FFPRO_VERSION FFPRO_VERSION_CHK(FFPRO_MAJOR, FFPRO_MINOR, FFPRO_PATCH)
+#define SMI_VERSION SMI_VERSION_CHK(SMI_MAJOR, SMI_MINOR, SMI_PATCH)
 
 #define DECL_LOCKGUARD(mtx) std::lock_guard<std::mutex> lock(mtx); (void)lock;
 

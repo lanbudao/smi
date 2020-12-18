@@ -12,11 +12,11 @@ const Uint32 update_event = SDL_USEREVENT + 10;
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2) {
-        AVDebug("Use 'sdl2play.exe file-name'\n");
-        system("pause");
-        return 0;
-    }
+    //if (argc < 2) {
+    //    AVDebug("Use 'sdl2play.exe file-name'\n");
+    //    system("pause");
+    //    return 0;
+    //}
     int w = 800, h = 480;
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_Init(SDL_INIT_EVERYTHING);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); // (default) this enables vsync
-    SDL_Window* window = SDL_CreateWindow("FFPRO", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    SDL_Window* window = SDL_CreateWindow("sdlplayer", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     SDL_GLContext context = SDL_GL_CreateContext(window);
     SDL_EventState(SDL_DROPFILE, SDL_ENABLE);
@@ -34,9 +34,9 @@ int main(int argc, char *argv[])
 
     //SMI::setLogOut(true);
     //SMI::setLogFile("E:/sdl2play-log");
-    char* fileName = argv[1];
+    //char* fileName = argv[1];
     //char* fileName = "E:/media/Heartbeats.mp3";
-    //char* fileName = "E:/media/冰河世纪：猛犸象的圣诞_BD中字_sub.mp4";
+    char* fileName = "E:/media/冰河世纪：猛犸象的圣诞_BD中字_sub.mp4";
     AVDebug("The name of file to play: %s\n", fileName);
 
     Player *player = new Player();
