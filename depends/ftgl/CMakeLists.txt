@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.4)
 
 project(ftgl)
 set(PROJECT_VERSION ${SMI_MAJOR}.${SMI_MINOR}.${SMI_PATCH})
-
 set(MODULE ftgl)
 
 # Use C++11
@@ -123,8 +122,11 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
 add_library(${MODULE} SHARED ${SOURCES} ${HEADERS})
 
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
+
 message(LIB_FREETYPE: ${LIB_FREETYPE})
-target_link_libraries(${MODULE} ${LIB_FREETYPE} opengl32 glu32)
+target_link_libraries(${MODULE}
+	LINK_PRIVATE ${LIB_FREETYPE}
+	LINK_PRIVATE opengl32 glu32)
 
 set_target_properties(${MODULE} PROPERTIES
         VERSION 1.0
