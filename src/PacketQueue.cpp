@@ -92,7 +92,7 @@ void PacketQueue::setBufferMode(BufferMode m)
 {
 	DPTR_D(PacketQueue);
 	d->mode = m;
-	if (isEmpty()) {
+	if (checkEmpty()) {
 		d->value0 = d->value1 = 0;
 		return;
 	}
@@ -228,7 +228,7 @@ void PacketQueue::onDequeue(const Packet & pkt)
 	if (checkEmpty()) {
 		d->buffering = true;
 	}
-	if (isEmpty()) {
+	if (checkEmpty()) {
 		d->value0 = 0;
 		d->value1 = 0;
 		return;

@@ -173,6 +173,7 @@ void Player::seek(double t, SeekType type)
     }
     AVDebug("Seek to %.3f, %.3f.\n", pos, seek_pos);
     d->demux_thread->seek(seek_pos, t, type);
+    CALL_BACK(d->seekRequest, seek_pos, t, type);
 }
 
 void Player::seekForward(int incr)
@@ -395,6 +396,12 @@ void Player::setSubtitleHeaderCallback(std::function<void(MediaInfo*)> f)
     DPTR_D(Player);
     d->subtitleHeaderChanged = f;
     d->applySubtitleStream();
+}
+
+void Player::setSeekRequestCallback(std::function<void(double pos, double incr, SeekType type)> f)
+{
+    DPTR_D(Player);
+    d->seekRequest = f;
 }
 
 NAMESPACE_END

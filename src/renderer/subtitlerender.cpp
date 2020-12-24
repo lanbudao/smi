@@ -4,8 +4,10 @@
 #endif
 #include "sdk/AVLog.h"
 #include "glad/glad.h"
+#include "glpackage.h"
 
 NAMESPACE_BEGIN
+
 
 class SubtitleRenderPrivate
 {
@@ -61,6 +63,8 @@ void SubtitleRender::setRenderPos(float pos)
 
 void SubtitleRender::setFontFile(const std::string & file)
 {
+    if (file.empty())
+        return;
 #ifdef SMI_HAVE_FREETYPE
     DPTR_D(SubtitleRender);
     if (!d->font)

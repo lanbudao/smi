@@ -3,6 +3,7 @@
 #include "inner.h"
 #include "sdk/mediainfo.h"
 #include "AVLog.h"
+#include "inner.h"
 
 #include <string>
 #include <vector>
@@ -397,10 +398,7 @@ bool Demuxer::seek(double pos, double incr)
     //    seek_flags |= AVSEEK_FLAG_BACKWARD;
     //int ret = av_seek_frame(d->format_ctx, -1, seek_target, seek_flags);
     if (ret < 0) {
-        static char str[AV_ERROR_MAX_STRING_SIZE];
-        memset(str, 0, sizeof(str));
-        return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, ret);
-        AVError("seek error: %s\n", str);
+        AVError("seek error: %s\n", averror2str(ret));
         return false;
     }
 	d->seek_pos = pos;

@@ -21,8 +21,6 @@ extern "C" {
 
 #define A_VER 0
 #define T_VER 1
-#define BUFFER_OFFSET(offset) ((void*)(offset))
-#define GET_STR(x) #x
 
 //#define RENDER_TEST
 

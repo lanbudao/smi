@@ -3,10 +3,122 @@
 #include "AVLog.h"
 #include "CThread.h"
 #include "util/mkid.h"
+#include "util/CThread.h"
+#include "Demuxer.h"
+#include "BlockQueue.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
 NAMESPACE_BEGIN
+
+#define SUB_QUEUE_SIZE 16
+
+typedef BlockQueue<SubtitleFrame> SubQueue;
+class SubtitleReadThread : public CThread
+{
+public:
+    SubtitleReadThread();
+    ~SubtitleReadThread();
+
+    void setBuffer(SubQueue *buffer) { sbuffer = buffer; }
+    void setFile(const std::string &file) { file_name = file; }
+    void setDecoder(SubtitleDecoder* d) { decoder = d; }
+    void run();
+    void stop();
+    void seek(double pos, double incr, SeekType type);
+
+private:
+    bool abort;
+    bool eof;
+    Demuxer demuxer;
+    std::string file_name;
+    SubQueue *sbuffer;
+    SubtitleDecoder* decoder;
+    std::mutex wait_mutex;
+    std::condition_variable continue_read_cond;
+    MediaInfo info;
+    bool seek_request;
+    double seek_pos; double seek_incr; SeekType seek_type;
+};
+
+SubtitleReadThread::SubtitleReadThread() :
+    abort(false),
+    eof(false),
+    sbuffer(nullptr),
+    decoder(nullptr),
+    seek_request(false)
+{
+}
+
+SubtitleReadThread::~SubtitleReadThread()
+{
+}
+
+void SubtitleReadThread::stop()
+{
+    abort = true;
+    continue_read_cond.notify_all();
+}
+
+void SubtitleReadThread::seek(double pos, double incr, SeekType type)
+{
+    seek_pos = pos;
+    seek_incr = incr;
+    seek_type = type;
+    seek_request = true;
+    continue_read_cond.notify_one();
+}
+
+void SubtitleReadThread::run()
+{
+    int ret;
+    int stream;
+    Packet pkt;
+
+    if (!sbuffer || !decoder)
+        return;
+    demuxer.setMediaInfo(&info);
+    demuxer.setMedia(file_name);
+    if (demuxer.load() < 0)
+        return;
+    decoder->processHeader(&info);
+    sbuffer->setCapacity(SUB_QUEUE_SIZE);
+    while (!abort) {
+        if (seek_request) {
+            demuxer.setSeekType(seek_type);
+            if (demuxer.seek(seek_pos, seek_incr)) {
+                sbuffer->clear();
+            }
+            seek_request = false;
+            eof = false;
+        }
+        if (sbuffer->checkFull()) {
+            /* wait 10 ms */
+            std::unique_lock<std::mutex> lock(wait_mutex);
+            continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
+            continue;
+        }
+        ret = demuxer.readFrame();
+        if (ret < 0) {
+            if (ret == AVERROR_EOF && !eof) {
+                eof = true;
+            }
+            std::unique_lock<std::mutex> lock(wait_mutex);
+            continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
+            continue;
+        }
+        else {
+            eof = false;
+        }
+        stream = demuxer.stream();
+        pkt = demuxer.packet();
+
+        if (stream == demuxer.streamIndex(MediaTypeSubtitle)) {
+            SubtitleFrame frame = decoder->processLine(&pkt);
+            sbuffer->enqueue(frame);
+        }
+    }
+}
 
 class SubtitleFramePrivate
 {
@@ -85,7 +197,8 @@ public:
         enabled(false),
         time_stamp(0),
         decoder(nullptr),
-        load_async(nullptr)
+        load_async(nullptr),
+        read_thread(nullptr)
     {
         decoder = SubtitleDecoder::create(SubtitleDecoderId_FFmpeg);
         if (!decoder) {
@@ -102,6 +215,7 @@ public:
             delete decoder;
             decoder = nullptr;
         }
+        resetReadThread();
     }
 
     void reset()
@@ -113,6 +227,16 @@ public:
 
     bool prepareFrame();
 
+    void resetReadThread()
+    {
+        if (read_thread) {
+            read_thread->stop();
+            read_thread->wait();
+            delete read_thread;
+            read_thread = nullptr;
+        }
+    }
+
     bool enabled;
     std::string fileName;
     std::string codec;
@@ -120,9 +244,12 @@ public:
     SubtitleDecoder *decoder;
     LoadAsync *load_async;
 
-    std::list<SubtitleFrame> frames;
-    std::list<SubtitleFrame>::iterator itf;
+    //std::list<SubtitleFrame> frames;
+    //std::list<SubtitleFrame>::iterator itf;
     SubtitleFrame current_frame;
+
+    SubtitleReadThread *read_thread;
+    SubQueue frames;
 };
 
 void SubtitlePrivate::loadInternal()
@@ -141,7 +268,7 @@ bool SubtitlePrivate::prepareFrame()
             current_frame.reset();
             return false;
         }
-        frames.pop_front();
+        frames.dequeue();
         if (time_stamp > f.start && time_stamp < f.stop) {
             break;
         }
@@ -168,7 +295,6 @@ Subtitle::Subtitle():
 
 Subtitle::~Subtitle()
 {
-
 }
 
 bool Subtitle::enabled() const
@@ -187,6 +313,12 @@ void Subtitle::setFile(const std::string &name)
 {
     DPTR_D(Subtitle);
     d->fileName = name;
+    d->resetReadThread();
+    d->read_thread = new SubtitleReadThread;
+    d->read_thread->setFile(name);
+    d->read_thread->setBuffer(&d->frames);
+    d->read_thread->setDecoder(d->decoder);
+    d->read_thread->start();
 }
 
 void Subtitle::setCodec(const std::string &codec)
@@ -204,6 +336,13 @@ void Subtitle::load()
     d->load_async->run();
 }
 
+void Subtitle::seek(double pos, double incr, SeekType type)
+{
+    DPTR_D(Subtitle);
+    if (!d->read_thread) return;
+    d->read_thread->seek(pos, incr, type);
+}
+
 bool Subtitle::processHeader(MediaInfo *info)
 {
     DPTR_D(Subtitle);
@@ -216,20 +355,21 @@ bool Subtitle::processLine(Packet *pkt)
     SubtitleFrame f = d->decoder->processLine(pkt);
     if (!f.isValid())
         return false;
-    if (d->frames.empty() || d->frames.back() < f) {
-        d->frames.push_back(f);
-        d->itf = d->frames.begin();
-        return true;
-    }
-    // usually add to the end. TODO: test
-    std::list<SubtitleFrame>::iterator it = d->frames.end();
-    if (it != d->frames.begin())
-        --it;
-    while (it != d->frames.begin() && f < (*it)) { --it; }
-    if (it != d->frames.begin()) // found in middle, insert before next
-        ++it;
-    d->frames.insert(it, f);
-    d->itf = it;
+    d->frames.enqueue(f);
+    //if (d->frames.empty() || d->frames.back() < f) {
+    //    d->frames.push_back(f);
+    //    d->itf = d->frames.begin();
+    //    return true;
+    //}
+    //// usually add to the end. TODO: test
+    //std::list<SubtitleFrame>::iterator it = d->frames.end();
+    //if (it != d->frames.begin())
+    //    --it;
+    //while (it != d->frames.begin() && f < (*it)) { --it; }
+    //if (it != d->frames.begin()) // found in middle, insert before next
+    //    ++it;
+    //d->frames.insert(it, f);
+    //d->itf = it;
     return true;
 }
 

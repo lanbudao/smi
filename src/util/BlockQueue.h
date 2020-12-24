@@ -21,22 +21,24 @@ public:
      */
     void enqueue(const T &t, unsigned long timeout = ULONG_MAX);
     T dequeue(bool *isValid = nullptr, unsigned long timeout = ULONG_MAX);
+    T front(bool *isValid = nullptr, unsigned long timeout = ULONG_MAX);
 
     void clear();
     void setCapacity(int cap);
     void setThreshold(int thr);
     void setBlock(bool block);
-    bool isEmpty() const;
-    bool isEnough() const;
+    //bool isEmpty() const;
+    //bool isEnough() const;
+    //bool isFull() const;
     void blockEmpty(bool block);
     void blockFull(bool block);
     unsigned int size() const;
 
-protected:
     virtual bool checkFull() const;
     virtual bool checkEmpty() const;
     virtual bool checkEnough() const;
 
+protected:
     virtual void onEnqueue(const T &t) {}
     virtual void onDequeue(const T &t) {}
 
@@ -118,6 +120,24 @@ T BlockQueue<T>::dequeue(bool *isValid, unsigned long timeout)
 }
 
 template<typename T>
+T BlockQueue<T>::front(bool *isValid, unsigned long timeout)
+{
+    if (isValid)
+        *isValid = false;
+    std::unique_lock<std::mutex> lock(mutex);
+    if (checkEmpty()) {
+        if (block_empty)
+            empty_cond.wait_for(lock, std::chrono::milliseconds(timeout));
+    }
+    if (checkEmpty())
+        return T();
+    T t = q.front();
+    if (isValid)
+        *isValid = true;
+    return t;
+}
+
+template<typename T>
 void BlockQueue<T>::setBlock(bool block)
 {
     std::unique_lock<std::mutex> lock(mutex);
@@ -137,16 +157,22 @@ template<typename T>
 void BlockQueue<T>::setThreshold(int thr) {
     threshold = thr;
 }
-
-template<typename T>
-bool BlockQueue<T>::isEmpty() const {
-    return q.empty();
-}
-
-template<typename T>
-bool BlockQueue<T>::isEnough() const {
-    return q.size() >= (unsigned int)threshold;
-}
+//
+//template<typename T>
+//bool BlockQueue<T>::isEmpty() const {
+//    return q.empty();
+//}
+//
+//template<typename T>
+//bool BlockQueue<T>::isEnough() const {
+//    return q.size() >= (unsigned int)threshold;
+//}
+//
+//template<typename T>
+//inline bool BlockQueue<T>::isFull() const
+//{
+//    return q.size() >= (unsigned int)capacity;
+//}
 
 template<typename T>
 bool BlockQueue<T>::checkFull() const {

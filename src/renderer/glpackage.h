@@ -6,6 +6,9 @@
 #include "Matrix4x4.h"
 #include "OpenglAide.h"
 
+#define BUFFER_OFFSET(offset) ((void*)(offset))
+#define GET_STR(x) #x
+
 typedef unsigned int GLenum;
 typedef int GLint;
 typedef unsigned int GLuint;

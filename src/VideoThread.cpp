@@ -89,6 +89,7 @@ public:
     VideoDecoder* decoder;
     OutputSet* output;
     int serial;
+    // flush decoder when media is eof
     bool flush_dec;
 };
 

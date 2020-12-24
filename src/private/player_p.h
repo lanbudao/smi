@@ -144,6 +144,7 @@ public:
     std::function<void(MediaStatus s)> mediaStatusChanged;
     std::function<void(MediaType type, int stream)> mediaStreamChanged;
     std::function<void(MediaInfo*)> subtitleHeaderChanged;
+    std::function<void(double pos, double incr, SeekType type)> seekRequest;
 };
 
 void PlayerPrivate::playInternal()

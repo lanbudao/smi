@@ -14,8 +14,10 @@ class SMI_EXPORT SubtitleFilter: public RenderFilter
 {
     DPTR_DECLARE_PRIVATE(SubtitleFilter)
 public:
-    SubtitleFilter();
+    SubtitleFilter(Player *player = nullptr, int track = -1, const std::string &font = "");
     ~SubtitleFilter();
+
+    void setFont(const std::string &font);
 
     /**
      * @brief there are two ways to load subtitle

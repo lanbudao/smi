@@ -124,10 +124,12 @@ public:
     void setBufferProcessCallback(std::function<void(float p)> f);
     void setMediaStatusCallback(std::function<void(MediaStatus)> f);
     void setStreamChangedCallback(std::function<void(MediaType type, int stream)> f);
+
 private:
     friend class SubtitleFilter;
     void setSubtitlePacketCallback(std::function<void(Packet* pkt)> f);
     void setSubtitleHeaderCallback(std::function<void(MediaInfo*)> f);
+    void setSeekRequestCallback(std::function<void(double pos, double incr, SeekType type)> f);
 
 private:
     class SMI_EXPORT DPTR_DECLARE(Player)

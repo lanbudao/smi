@@ -83,8 +83,7 @@ int main(int argc, char *argv[])
     sub_filter->setFile("E:/[冰河世纪：猛犸象的圣诞节].Ice.Age.A.Mammoth.Christmas.2011.720p.BluRay.x264-aAF.Eng.srt");
     //player->installFilter(sub_filter);
 
-    SubtitleFilter *sub_internal_filter = new SubtitleFilter;
-    //sub_internal_filter->setPlayer(player);
+    SubtitleFilter *sub_internal_filter = new SubtitleFilter(player);
     //player->installFilter(sub_internal_filter);
 
     /*Set window icon*/

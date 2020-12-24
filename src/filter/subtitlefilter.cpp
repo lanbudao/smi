@@ -7,7 +7,7 @@
 
 NAMESPACE_BEGIN
 
-class SubtitleFilterPrivate: public RenderFilterPrivate
+class SubtitleFilterPrivate : public RenderFilterPrivate
 {
 public:
     SubtitleFilterPrivate() :
@@ -24,21 +24,34 @@ public:
 
 public:
     Player *player;
+    std::string fontfile;
     std::string filename;
     float pos;
     SubtitleRender render;
     Subtitle *subtitle;
 };
 
-SubtitleFilter::SubtitleFilter():
+SubtitleFilter::SubtitleFilter(Player *player, int track, const std::string &font):
     RenderFilter(new SubtitleFilterPrivate)
 {
-
+    if (player) {
+        setPlayer(player);
+        if (track >= 0)
+            player->setSubtitleStream(track);
+    }
+    setFont(font);
 }
 
 SubtitleFilter::~SubtitleFilter()
 {
 
+}
+
+void SubtitleFilter::setFont(const std::string & font)
+{
+    DPTR_D(SubtitleFilter);
+    d->fontfile = font;
+    d->render.setFontFile(font);
 }
 
 void SubtitleFilter::setPlayer(Player * player)
@@ -49,8 +62,11 @@ void SubtitleFilter::setPlayer(Player * player)
         void {d->subtitle->processLine(pkt);};
     auto process_header = [d](MediaInfo *info)->
         void {d->subtitle->processHeader(info); };
+    auto process_seek = [d](double pos, double incr, SeekType type)->
+        void {d->subtitle->seek(pos, incr, type); };
     player->setSubtitlePacketCallback(process_line);
     player->setSubtitleHeaderCallback(process_header);
+    player->setSeekRequestCallback(process_seek);
 }
 
 void SubtitleFilter::setFile(const std::string & filename)

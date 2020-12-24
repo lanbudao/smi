@@ -50,6 +50,7 @@ public:
     void setFile(const std::string &name);
     void setCodec(const std::string &codec);
     void load();
+    void seek(double pos, double incr, SeekType type);
     bool processHeader(MediaInfo *info);
     bool processLine(Packet *pkt);
 
