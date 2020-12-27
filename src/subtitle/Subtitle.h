@@ -5,6 +5,7 @@
 #include "sdk/DPTR.h"
 #include "sdk/mediainfo.h"
 #include "Packet.h"
+#include <vector>
 
 struct AVFrame;
 NAMESPACE_BEGIN

@@ -1,7 +1,7 @@
 #ifndef MEDIAINFO_H
 #define MEDIAINFO_H
 
-#include <vector>
+#include <list>
 #include <string>
 
 typedef struct Rational {
@@ -72,13 +72,18 @@ typedef struct MediaInfo_ {
     int64_t size;
     int streams;
 
-    std::vector<AudioStreamInfo> audios;
-    std::vector<VideoStreamInfo> videos;
-    std::vector<SubtitleStreamInfo> subtitles;
+    std::list<AudioStreamInfo> audios;
+    std::list<VideoStreamInfo> videos;
+    std::list<SubtitleStreamInfo> subtitles;
 
-    AudioStreamInfo* audio = nullptr;
-    VideoStreamInfo* video = nullptr;
-    SubtitleStreamInfo* subtitle = nullptr;
+    AudioStreamInfo *audio = nullptr;
+    VideoStreamInfo *video = nullptr;
+    SubtitleStreamInfo *subtitle = nullptr;
+
+    /* Current index of stream selected, 0 by default and -1 means no stream*/
+    int audio_track = -1;
+    int video_track = -1;
+    int subtitle_track = -1;
 
 } MediaInfo;
 

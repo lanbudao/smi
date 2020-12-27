@@ -34,6 +34,11 @@ void Player::setWantedStreamSpec(MediaType type, const char* spec)
     d->demuxer->setWantedStreamSpec(type, spec);
 }
 
+int Player::mediaStreamIndex(MediaType type)
+{
+    return d_func()->demuxer->streamIndex(type);
+}
+
 void Player::setMediaStreamDisable(MediaType type)
 {
     DPTR_D(Player);
@@ -306,15 +311,16 @@ bool Player::installFilter(RenderFilter * filter, VideoRenderer * render, int in
 bool Player::setSubtitleStream(int stream)
 {
     DPTR_D(Player);
-    if (d->demuxer->streamIndex(MediaTypeSubtitle) == stream)
-        return true;
-    if (!d->demuxer->isLoaded())
-        return false;
-    if (!d->demuxer->setStreamIndex(MediaTypeSubtitle, stream))
-        return false;
-    if (d->mediaStreamChanged)
-        d->mediaStreamChanged(MediaTypeSubtitle, stream);
-    return d->applySubtitleStream();
+    //if (d->demuxer->streamIndex(MediaTypeSubtitle) == stream)
+    //    return true;
+    //if (!d->demuxer->isLoaded())
+    //    return false;
+    //if (!d->demuxer->setStreamIndex(MediaTypeSubtitle, stream))
+    //    return false;
+    //if (d->mediaStreamChanged)
+    //    d->mediaStreamChanged(MediaTypeSubtitle, stream);
+    //return d->applySubtitleStream();
+    return false;
 }
 
 std::map<string, string> Player::internalSubtitles() const

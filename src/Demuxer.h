@@ -28,6 +28,7 @@ public:
     };
 
     void setMedia(const std::string& url);
+    int  streamIndex(MediaType type);
     void setWantedStreamSpec(MediaType type, const char* spec);
     void setMediaStreamDisable(MediaType type);
     int  load();
@@ -56,12 +57,6 @@ public:
     int64_t duration();
 
     int stream() const;
-    int streamIndex(MediaType type) const;
-    /**
-     * @brief set index of media stream. If index is -1, disable the stream.
-     * @return true or false
-     */
-    bool setStreamIndex(MediaType type, int index = -1);
     AVStream* stream(MediaType type) const;
     const Packet& packet() const;
 

@@ -130,6 +130,8 @@ public:
             av_packet_free(&avpkt);
     }
 
+    void prepareStreams();
+
     bool isRealTime();
     bool isSeekable();
 
@@ -164,6 +166,55 @@ public:
     bool show_status;
 	double seek_pos;
 };
+
+void DemuxerPrivate::prepareStreams()
+{
+    int i;
+
+    for (i = 0; static_cast<unsigned int>(i) < format_ctx->nb_streams; i++) {
+        AVStream *st = format_ctx->streams[i];
+        //Fuck this flag
+        st->discard = AVDISCARD_DEFAULT;
+        enum AVMediaType type = st->codecpar->codec_type;
+        if (type >= 0 && wanted_stream_spec[type] && stream_index[type] == -1) {
+            if (avformat_match_stream_specifier(format_ctx, st, wanted_stream_spec[type]) > 0) {
+                stream_index[type] = i;
+            }
+        }
+    }
+
+    for (i = 0; i < AVMEDIA_TYPE_NB; i++) {
+        if (wanted_stream_spec[i] && stream_index[i] == -1) {
+            av_log(nullptr, AV_LOG_ERROR, "Stream specifier %s does not match any %s stream\n",
+                wanted_stream_spec[i],
+                av_get_media_type_string(static_cast<AVMediaType>(i)));
+            stream_index[i] = INT_MAX;
+        }
+    }
+
+    if (audio_enabled) {
+        stream_index[AVMEDIA_TYPE_AUDIO] =
+            av_find_best_stream(format_ctx, AVMEDIA_TYPE_AUDIO,
+                stream_index[AVMEDIA_TYPE_AUDIO],
+                stream_index[AVMEDIA_TYPE_VIDEO],
+                nullptr, 0);
+    }
+    if (video_enabled) {
+        stream_index[AVMEDIA_TYPE_VIDEO] =
+            av_find_best_stream(format_ctx, AVMEDIA_TYPE_VIDEO,
+                stream_index[AVMEDIA_TYPE_VIDEO],
+                -1, nullptr, 0);
+    }
+    if (audio_enabled && subtitle_enabled) {
+        stream_index[AVMEDIA_TYPE_SUBTITLE] =
+            av_find_best_stream(format_ctx, AVMEDIA_TYPE_SUBTITLE,
+                stream_index[AVMEDIA_TYPE_SUBTITLE],
+                stream_index[AVMEDIA_TYPE_AUDIO] > 0 ?
+                stream_index[AVMEDIA_TYPE_AUDIO] :
+                stream_index[AVMEDIA_TYPE_VIDEO],
+                nullptr, 0);
+    }
+}
 
 bool DemuxerPrivate::isRealTime()
 {
@@ -204,6 +255,12 @@ void Demuxer::setMedia(const std::string& url)
 {
     DPTR_D(Demuxer);
     d->url = url;
+}
+
+int Demuxer::streamIndex(MediaType type)
+{
+    DPTR_D(Demuxer);
+    return d->stream_index[type];
 }
 
 void Demuxer::setWantedStreamSpec(MediaType type, const char* spec)
@@ -268,53 +325,13 @@ int Demuxer::load()
 
     if (d->show_status)
         av_dump_format(d->format_ctx, 0, d->url.c_str(), 0);
-    for (i = 0; static_cast<unsigned int>(i) < d->format_ctx->nb_streams; i++) {
-        AVStream *st = d->format_ctx->streams[i];
-        //Fuck this flag
-        st->discard = AVDISCARD_DEFAULT;
-        enum AVMediaType type = st->codecpar->codec_type;
-        if (type >= 0 && d->wanted_stream_spec[type] && d->stream_index[type] == -1) {
-            if (avformat_match_stream_specifier(d->format_ctx, st, d->wanted_stream_spec[type]) > 0) {
-                d->stream_index[type] = i;
-            }
-        }
-    }
-
-    for (i = 0; i < AVMEDIA_TYPE_NB; i++) {
-        if (d->wanted_stream_spec[i] && d->stream_index[i] == -1) {
-            av_log(nullptr, AV_LOG_ERROR, "Stream specifier %s does not match any %s stream\n",
-                   d->wanted_stream_spec[i],
-                   av_get_media_type_string(static_cast<AVMediaType>(i)));
-            d->stream_index[i] = INT_MAX;
-        }
-    }
-
-    if (d->audio_enabled) {
-        d->stream_index[AVMEDIA_TYPE_AUDIO] =
-                av_find_best_stream(d->format_ctx, AVMEDIA_TYPE_AUDIO,
-                                    d->stream_index[AVMEDIA_TYPE_AUDIO],
-                                    d->stream_index[AVMEDIA_TYPE_VIDEO],
-                                    nullptr, 0);
-    }
-    if (d->video_enabled) {
-        d->stream_index[AVMEDIA_TYPE_VIDEO] =
-                av_find_best_stream(d->format_ctx, AVMEDIA_TYPE_VIDEO,
-                                    d->stream_index[AVMEDIA_TYPE_VIDEO],
-                                    -1, nullptr, 0);
-    }
-    if (d->audio_enabled && d->subtitle_enabled) {
-        d->stream_index[AVMEDIA_TYPE_SUBTITLE] =
-                av_find_best_stream(d->format_ctx, AVMEDIA_TYPE_SUBTITLE,
-                                    d->stream_index[AVMEDIA_TYPE_SUBTITLE],
-                                    d->stream_index[AVMEDIA_TYPE_AUDIO] > 0 ?
-                                        d->stream_index[AVMEDIA_TYPE_AUDIO] :
-                                        d->stream_index[AVMEDIA_TYPE_VIDEO],
-                                    nullptr, 0);
-    }
+    // prepare audio, video and subtitle stream
+    d->prepareStreams();
 
     d->seekable = d->isSeekable();
 
     initMediaInfo();
+
     return 0;
 }
 
@@ -468,7 +485,7 @@ void Demuxer::initMediaInfo()
     
     if (!d->media_info)
         return;
-    memset(d->media_info, 0, sizeof(*d->media_info));
+    //memset(d->media_info, 0, sizeof(*d->media_info));
     d->media_info->url = d->url;
     d->media_info->bit_rate = d->format_ctx->bit_rate;
     d->media_info->start_time = d->format_ctx->start_time / AV_TIME_BASE;
@@ -501,7 +518,8 @@ void Demuxer::initMediaInfo()
             info.time_base = Rational(st->time_base.num, st->time_base.den);
             d->media_info->audios.push_back(info);
             if (d->stream_index[MediaTypeAudio] == i) {
-                d->media_info->audio = &d->media_info->audios[d->media_info->audios.size() - 1];
+                d->media_info->audio_track = d->media_info->audios.size() - 1;
+                d->media_info->audio = &(*d->media_info->audios.rbegin());
             }
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             VideoStreamInfo info;
@@ -533,7 +551,8 @@ void Demuxer::initMediaInfo()
             info.frame_rate = Rational(fr.num, fr.den);
             d->media_info->videos.push_back(info);
             if (d->stream_index[MediaTypeVideo] == i) {
-                d->media_info->video = &d->media_info->videos[d->media_info->videos.size() - 1];
+                d->media_info->video_track = d->media_info->videos.size() - 1;
+                d->media_info->video = &(*d->media_info->videos.rbegin());
             }
         } else if (st->codecpar->codec_type == AVMEDIA_TYPE_SUBTITLE) {
             SubtitleStreamInfo info;
@@ -550,7 +569,8 @@ void Demuxer::initMediaInfo()
             info.extradata_size = st->codecpar->extradata_size;
             d->media_info->subtitles.push_back(info);
             if (d->stream_index[MediaTypeSubtitle] == i) {
-                d->media_info->subtitle = &d->media_info->subtitles[d->media_info->subtitles.size() - 1];
+                d->media_info->subtitle_track = d->media_info->subtitles.size() - 1;
+                d->media_info->subtitle = &(*d->media_info->subtitles.rbegin());
             }
         }
     }
@@ -583,49 +603,6 @@ int Demuxer::stream() const
 {
     DPTR_D(const Demuxer);
     return d->stream;
-}
-
-int Demuxer::streamIndex(MediaType type) const
-{
-    DPTR_D(const Demuxer);
-    return d->stream_index[type];
-}
-
-bool Demuxer::setStreamIndex(MediaType type, int index)
-{
-    DPTR_D(Demuxer);
-    if (index < 0) {
-        d->stream_index[type] = index;
-        return true;
-    }
-    if (type == MediaTypeAudio) {
-        for (int i = 0; i < d->media_info->audios.size(); ++i) {
-            if (d->media_info->audios[i].stream == index) {
-                d->stream_index[type] = index;
-                d->media_info->audio = &d->media_info->audios[i];
-                return true;
-            }
-        }
-    }
-    else if (type == MediaTypeVideo) {
-        for (int i = 0; i < d->media_info->videos.size(); ++i) {
-            if (d->media_info->videos[i].stream == index) {
-                d->stream_index[type] = index;
-                d->media_info->video = &d->media_info->videos[i];
-                return true;
-            }
-        }
-    }
-    else if (type == MediaTypeSubtitle) {
-        for (int i = 0; i < d->media_info->subtitles.size(); ++i) {
-            if (d->media_info->subtitles[i].stream == index) {
-                d->stream_index[type] = index;
-                d->media_info->subtitle = &d->media_info->subtitles[i];
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 AVStream* Demuxer::stream(MediaType type) const
