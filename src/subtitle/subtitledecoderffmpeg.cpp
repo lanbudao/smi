@@ -8,11 +8,27 @@ extern "C" {
 #include "util/stringaide.h"
 #include "inner.h"
 #include "plaintext.h"
+#include "private/AVDecoder_p.h"
 
 NAMESPACE_BEGIN
 
+class SubtitleDecoderFFmpegPrivate : public SubtitleDecoderPrivate
+{
+public:
+    SubtitleDecoderFFmpegPrivate()
+    {
+
+    }
+    virtual ~SubtitleDecoderFFmpegPrivate()
+    {
+
+    }
+
+};
+
 class SubtitleDecoderFFmpeg: public SubtitleDecoder
 {
+    DPTR_DECLARE_PRIVATE(SubtitleDecoderFFmpeg)
 public:
     SubtitleDecoderFFmpeg();
     ~SubtitleDecoderFFmpeg();
@@ -20,17 +36,22 @@ public:
     SubtitleDecoderId id() const;
     std::string name() const;
     std::list<std::string> supportedTypes() const;
+
     bool process(const std::string& path);
     std::list<SubtitleFrame> frames() const;
     bool processHeader(MediaInfo *info);
     SubtitleFrame processLine(Packet *pkt);
     std::string getText(double pts) const;
 
+    virtual SubtitleFrame decode(Packet *pkt, int *ret);
+
 private:
     bool processSubtitle();
     AVCodecContext *codec_ctx;
     Demuxer sub_reader;
     std::list<SubtitleFrame> m_frames;
+    SubtitleFrame frame;//current frame
+    AVSubtitle av_subtitle;
     MediaInfo *media_info;
 };
 
@@ -38,9 +59,11 @@ extern SubtitleDecoderId SubtitleDecoderId_FFmpeg;
 FACTORY_REGISTER(SubtitleDecoder, FFmpeg, "FFmpeg")
 
 SubtitleDecoderFFmpeg::SubtitleDecoderFFmpeg():
+    SubtitleDecoder(new SubtitleDecoderFFmpegPrivate),
     codec_ctx(nullptr),
     media_info(nullptr)
 {
+    memset(&av_subtitle, 0, sizeof(av_subtitle));
 }
 
 SubtitleDecoderFFmpeg::~SubtitleDecoderFFmpeg()
@@ -248,7 +271,7 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet *pkt)
         return SubtitleFrame();
     }
     SubtitleFrame frame;
-    frame.type = (sub.format == 0) ? SubtitlePixmap : SubtitleText;
+    //frame.type = (sub.format == 0) ? SubtitlePixmap : SubtitleText;
     // relative to packet pts, in ms
     double pts;
     if (sub.pts != AV_NOPTS_VALUE && media_info && media_info->subtitle)
@@ -260,27 +283,56 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet *pkt)
     else
         pts = pkt->pts;
     frame.start = pts + FORCE_DOUBLE(sub.start_display_time) / 1000;
-    frame.stop = pts + FORCE_DOUBLE(sub.end_display_time) / 1000;
-    for (unsigned i = 0; i < sub.num_rects; i++) {
-        switch (sub.rects[i]->type) {
-        case SUBTITLE_ASS:
-            //qDebug("ass frame: %s", sub.rects[i]->ass);
-            frame.push_back(PlainText::fromAss(sub.rects[i]->ass));
-            break;
-        case SUBTITLE_TEXT:
-            //qDebug("txt frame: %s", sub.rects[i]->text);
-            frame.push_back(sub.rects[i]->text);
-            break;
-        case SUBTITLE_BITMAP:
-            //sub.rects[i]->w > 0 && sub.rects[i]->h > 0
-            //AVDebug("bmp sub");
-            frame = SubtitleFrame(); // not support bmp subtitle now
-            break;
-        default:
-            break;
-        }
+    frame.end = pts + FORCE_DOUBLE(sub.end_display_time) / 1000;
+
+    //for (unsigned i = 0; i < sub.num_rects; i++) {
+    //    switch (sub.rects[i]->type) {
+    //    case SUBTITLE_ASS:
+    //        //qDebug("ass frame: %s", sub.rects[i]->ass);
+    //        frame.push_back(PlainText::fromAss(sub.rects[i]->ass));
+    //        break;
+    //    case SUBTITLE_TEXT:
+    //        //qDebug("txt frame: %s", sub.rects[i]->text);
+    //        frame.push_back(sub.rects[i]->text);
+    //        break;
+    //    case SUBTITLE_BITMAP:
+    //        //sub.rects[i]->w > 0 && sub.rects[i]->h > 0
+    //        //AVDebug("bmp sub");
+    //        frame = SubtitleFrame(); // not support bmp subtitle now
+    //        break;
+    //    default:
+    //        break;
+    //    }
+    //}
+    //avsubtitle_free(&sub);
+    return frame;
+}
+
+SubtitleFrame SubtitleDecoderFFmpeg::decode(Packet *pkt, int *ret)
+{
+    DPTR_D(SubtitleDecoderFFmpeg);
+    AVPacket* packet = pkt->avPacket();
+    SubtitleFrame frame;
+    AVSubtitle *av_subtitle = frame.data();
+
+    int got_subtitle = 0;
+    *ret = avcodec_decode_subtitle2(d->codec_ctx, av_subtitle, &got_subtitle, packet);
+    if (*ret < 0 || !got_subtitle) {
+        return frame;
     }
-    avsubtitle_free(&sub);
+    // relative to packet pts, in ms
+    double pts;
+    if (av_subtitle->pts != AV_NOPTS_VALUE && media_info && media_info->subtitle)
+        pts = av_subtitle->pts / av_q2d(
+            {
+                media_info->subtitle->time_base.num,
+                media_info->subtitle->time_base.den,
+            });
+    else
+        pts = pkt->pts;
+    frame.start = pts + FORCE_DOUBLE(av_subtitle->start_display_time) / 1000;
+    frame.end = pts + FORCE_DOUBLE(av_subtitle->end_display_time) / 1000;
+    frame.setSerial(pkt->serial);
     return frame;
 }
 
@@ -324,7 +376,7 @@ bool SubtitleDecoderFFmpeg::processSubtitle()
         if (!pkt.isValid())
             continue;
         SubtitleFrame frame = processLine(&pkt);
-        if (frame.isValid())
+        if (frame.valid())
             m_frames.push_back(frame);
     }
     avcodec_close(codec_ctx);

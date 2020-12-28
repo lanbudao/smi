@@ -9,7 +9,8 @@
 //#include <GL/GLU.h>
 //#define TEST_YUV
 #include "glpackage.h"
-
+//#include <windows.h>
+//#include <WINGDI.h>
 
 //传递顶点和材质坐标
 static const GLfloat vertexandtexture[] = {
@@ -52,7 +53,7 @@ static const char* quad_shader_fs = GET_STR(
     uniform sampler2D bitmap_tex;
     void main(void)
     {
-        gl_FragColor = /*vec4(1.0, 1.0, 0.0, 1.0)*/texture2D(bitmap_tex, tex_coord);
+        gl_FragColor = texture2D(bitmap_tex, tex_coord);
     }
 );
 class PixmapRender
@@ -110,6 +111,38 @@ void PixmapRender::readFile()
     fread(pixeldata, pixellength, 1, pfile);
     //关闭文件
     fclose(pfile);
+
+    //int i, j = 0; //Index variables
+    //FILE *file;//File pointer
+    ////unsigned char *l_texture; //The pointer to the memory zone in which we will load thetexture
+    //// windows.hgives us these types to work with the Bitmap files
+    //BITMAPFILEHEADER fileheader;
+    //BITMAPINFOHEADER infoheader;
+    //RGBTRIPLE rgb;
+    //if ((file = fopen("E:/welcome_en.bmp", "rb")) == NULL)
+    //    return;// Open the file for reading   
+    //fread(&fileheader, sizeof(fileheader), 1, file);// Read the fileheader
+    //fseek(file, sizeof(fileheader), SEEK_SET);// Jump the fileheader
+    //fread(&infoheader, sizeof(infoheader), 1, file);// and read the infoheader
+    //// Now we need toallocate the memory for our image (width * height * color deep)
+    //pixeldata = (uchar *)malloc(infoheader.biWidth*infoheader.biHeight * 4);
+    //// And fill itwith zeros
+    //memset(pixeldata, 0, infoheader.biWidth *infoheader.biHeight * 4);
+    //// At this pointwe can read every pixel of the image
+    //for (i = 0; i < infoheader.biWidth*infoheader.biHeight; i++)
+    //{
+    //    // Weload an RGB value from the file
+    //    fread(&rgb, sizeof(rgb), 1, file);
+    //    // Andstore it
+    //    pixeldata[j + 0] = rgb.rgbtRed;// Redcomponent
+    //    pixeldata[j + 1] = rgb.rgbtGreen;// Greencomponent
+    //    pixeldata[j + 2] = rgb.rgbtBlue;// Bluecomponent
+    //    pixeldata[j + 3] = 255;// Alphavalue
+    //    j += 4; // Go to the next position
+    //}
+    //imagewidth = infoheader.biWidth;
+    //imageheight = infoheader.biHeight;
+    //fclose(file);// Close
 }
 
 void PixmapRender::initialize()
@@ -169,10 +202,10 @@ void PixmapRender::initialize()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     //创建材质显卡空间
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, imagewidth, imageheight, 0, GL_BGR, GL_UNSIGNED_BYTE, nullptr);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imagewidth, imageheight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixeldata);
+    ////glTexImage2D(GL_TEXTURE_2D, 0, GL_BGR, imagewidth, imageheight, 0, GL_BGR, GL_UNSIGNED_BYTE, nullptr);
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imagewidth, imageheight, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixeldata);
 
     //分配材质内存空间
     //datas = new unsigned char[imagewidth * imageheight];       //y
@@ -526,7 +559,7 @@ void OpenglVideo::renderVideo(const VideoFrame &frame)
 void OpenglVideo::initialize()
 {
 	DPTR_D(OpenglVideo);
-    //d->pixmap_render.initialize();
+    d->pixmap_render.initialize();
 	fill(d->background);
 	double b = 0, c = 0, h = 0, s = 0;
 	if (d->material) {

@@ -25,7 +25,7 @@ public:
 		buffering(true), // in buffering state at the beginning
 		max(1.0),
         realtime(false),
-		buffer(0),
+		buffer(24),
 		value0(0),
 		value1(0)/*,
 		history(kAvgSize)*/

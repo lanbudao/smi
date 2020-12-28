@@ -244,6 +244,11 @@ void AVDemuxThread::run()
 
     PacketQueue *vbuffer = d->video_thread ? d->video_thread->packets() : nullptr;
     PacketQueue *abuffer = d->audio_thread ? d->audio_thread->packets() : nullptr;
+    PacketQueue *sbuffer = nullptr;
+    if (d->video_thread) {
+        VideoThread *thread = dynamic_cast<VideoThread*>(d->video_thread);
+        sbuffer = thread->subtitlePackets();
+    }
     Demuxer *demuxer = d->demuxer;
     AVThread* thread = !d->video_thread || (d->audio_thread && demuxer->hasAttachedPic())
         ? d->audio_thread : d->video_thread;
@@ -256,6 +261,10 @@ void AVDemuxThread::run()
 	if (vbuffer) {
 		vbuffer->enqueue(Packet::createFlush());
 		//vbuffer->blockEmpty(false);
+        if (sbuffer) {
+            sbuffer->blockFull(false);
+            sbuffer->enqueue(Packet::createFlush());
+        }
     }
     if (d->audio_thread && !d->audio_thread->isRunning()) {
         d->audio_thread->start();
@@ -283,6 +292,8 @@ void AVDemuxThread::run()
                 if (vbuffer) {
                     vbuffer->clear();
                     vbuffer->enqueue(Packet::createFlush());
+                    if (sbuffer)
+                        sbuffer->enqueue(Packet::createFlush());
                     d->video_thread->requestSeek();
                 }
             }
@@ -310,8 +321,10 @@ void AVDemuxThread::run()
             }
         }
         audio_has_pic = demuxer->hasAttachedPic();
-		if ((!abuffer || (abuffer && abuffer->checkFull())/* || (abuffer->duration() > 1.0)*/) &&
-			(!(vbuffer && !audio_has_pic) || (vbuffer && vbuffer->checkFull())/* || (vbuffer->duration() > 1.0)*/)) {
+        // use || or &&? or do not check whether sbuffer is full? 
+		if ( (!abuffer || (abuffer && abuffer->checkFull())) ||
+			(!(vbuffer && !audio_has_pic) || (vbuffer && vbuffer->checkFull())) ||
+            (!sbuffer || (sbuffer && sbuffer->checkFull())) ) {
 			/* wait 10 ms */
 			std::unique_lock<std::mutex> lock(d->wait_mutex);
 			d->continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
@@ -325,6 +338,8 @@ void AVDemuxThread::run()
                 }
                 if (vbuffer) {
                     vbuffer->enqueue(Packet::createEOF());
+                    if (sbuffer)
+                        sbuffer->enqueue(Packet::createEOF());
                 }
 				d->eof = true;
 				d->clock->setEof(true);
@@ -352,8 +367,12 @@ void AVDemuxThread::run()
             }
         }
         else if (stream == demuxer->streamIndex(MediaTypeSubtitle)) {
-            if (d->subtitlePacketChanged)
-                d->subtitlePacketChanged(&pkt);
+            //if (d->subtitlePacketChanged)
+            //    d->subtitlePacketChanged(&pkt);
+            if (sbuffer) {
+                sbuffer->blockFull(false);
+                sbuffer->enqueue(pkt);
+            }
         }
         this->updateBufferStatus();
     }

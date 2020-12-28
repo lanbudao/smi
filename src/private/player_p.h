@@ -16,6 +16,7 @@
 #include "VideoRenderer.h"
 #include "subtitle/Subtitle.h"
 #include "filter/Filter.h"
+#include "subtitle/subtitledecoder.h"
 
 NAMESPACE_BEGIN
 
@@ -34,6 +35,7 @@ public:
         audio_thread(nullptr),
         video_dec(nullptr),
         audio_dec(nullptr),
+        subtitle_dec(nullptr),
         ao(nullptr),
         resample_type(ResampleBase),
         clock_type(SyncToAudio)
@@ -45,6 +47,7 @@ public:
         demux_thread->setDemuxer(demuxer);
         demux_thread->setClock(&clock);
         video_dec_ids = VideoDecoder::registered();
+        subtitle_dec_ids = SubtitleDecoder::registered();
     }
 
     ~PlayerPrivate()
@@ -62,6 +65,10 @@ public:
         if (video_dec) {
             delete video_dec;
             video_dec = nullptr;
+        }
+        if (subtitle_dec) {
+            delete subtitle_dec;
+            subtitle_dec = nullptr;
         }
         if (demuxer) {
             delete demuxer;
@@ -118,7 +125,9 @@ public:
     /*Decoder*/
     VideoDecoder *video_dec;
     AudioDecoder *audio_dec;
+    SubtitleDecoder *subtitle_dec;
     std::vector<VideoDecoderId> video_dec_ids;
+    std::vector<SubtitleDecoderId> subtitle_dec_ids;
 
     /*OutputSet*/
     OutputSet video_output_set;
@@ -132,6 +141,7 @@ public:
     /*Subtitles*/
     Subtitle internal_subtitle;
     std::list<Subtitle*> external_subtitles;
+    PacketQueue subtitle_packets;
 
     /* filters*/
     std::list<Filter*> audio_filters;
@@ -285,6 +295,18 @@ bool PlayerPrivate::setupVideoThread()
 		AVDebug("Can not found video decoder.\n");
 		return false;
 	}
+    // create subtitle decoder
+    for (size_t i = 0; i < subtitle_dec_ids.size(); ++i) {
+        SubtitleDecoder *dec = SubtitleDecoder::create(subtitle_dec_ids.at(i));
+        if (!dec)
+            continue;
+        dec->initialize(demuxer->formatCtx(), demuxer->stream(MediaTypeSubtitle));
+        if (dec->open()) {
+            subtitle_dec = dec;
+            break;
+        }
+        delete dec;
+    }
 	if (!video_thread) {
         video_thread = new VideoThread();
         video_thread->setMediaInfo(&mediainfo);
@@ -294,6 +316,11 @@ bool PlayerPrivate::setupVideoThread()
 		demux_thread->setVideoThread(video_thread);
 	}
 	video_thread->setDecoder(video_dec);
+    if (subtitle_dec) {
+        VideoThread *thread = dynamic_cast<VideoThread*>(video_thread);
+        thread->setSubtitleDecoder(subtitle_dec);
+        thread->setSubtitlePackets(&subtitle_packets);
+    }
 	updateBufferValue(video_thread->packets());
 	return true;
 }

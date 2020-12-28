@@ -93,22 +93,22 @@ void SubtitleFilter::process(MediaInfo * info, VideoFrame * frame)
     DPTR_D(SubtitleFilter);
     d->subtitle->setTimestamp(frame->timestamp());
     SubtitleFrame f = d->subtitle->frame();
-    if (!f.isValid())
+    if (!f.valid())
         return;
-    if (f.type == SubtitleText) {
-        std::string text;
-        const std::vector<std::string> &texts = f.texts();
-        for (int i = 0; i < texts.size(); ++i) {
-            text.append(texts.at(i));
-            if (i != texts.size() - 1)
-                text.append("\n");
-        }
-        d->render.drawText(text);
-    }
-    else if (f.type == SubtitlePixmap) {
-        //TODO
-        d->render.drawPixmap();
-    }
+    //if (f.type == SubtitleText) {
+    //    std::string text;
+    //    const std::vector<std::string> &texts = f.texts();
+    //    for (int i = 0; i < texts.size(); ++i) {
+    //        text.append(texts.at(i));
+    //        if (i != texts.size() - 1)
+    //            text.append("\n");
+    //    }
+    //    d->render.drawText(text);
+    //}
+    //else if (f.type == SubtitlePixmap) {
+    //    //TODO
+    //    d->render.drawPixmap();
+    //}
 }
 
 NAMESPACE_END

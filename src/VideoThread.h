@@ -14,6 +14,10 @@ public:
     VideoThread();
     ~VideoThread();
 
+    void setSubtitleDecoder(AVDecoder* decoder);
+    PacketQueue *subtitlePackets();
+    void setSubtitlePackets(PacketQueue *packets);
+
     void pause(bool p) override;
 
     void stepToNextFrame(std::function<void()> cb);

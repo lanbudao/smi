@@ -4,6 +4,7 @@
 #include "sdk/global.h"
 #include "sdk/DPTR.h"
 #include "VideoFrame.h"
+#include "subtitle/subtitleframe.h"
 
 NAMESPACE_BEGIN
 
@@ -27,6 +28,7 @@ public:
     void clearOutput();
 
     void sendVideoFrame(const VideoFrame &frame);
+    void sendSubtitleFrame(SubtitleFrame &frame);
 
 private:
     DPTR_DECLARE(OutputSet)

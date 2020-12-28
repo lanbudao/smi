@@ -4,6 +4,7 @@
 #include "AVOutput.h"
 #include "VideoFrame.h"
 #include "renderer/RectF.h"
+#include "subtitle/subtitleframe.h"
 
 NAMESPACE_BEGIN
 class Filter;
@@ -30,6 +31,8 @@ public:
     virtual void setBackgroundColor(const Color &c);
 
 	void receive(const VideoFrame &frame);
+
+    void receiveSubtitle(SubtitleFrame &frame);
 
 	void setSourceSize(int width, int height);
 

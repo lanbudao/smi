@@ -59,6 +59,14 @@ void VideoRenderer::receive(const VideoFrame &frame)
 #endif
 }
 
+void VideoRenderer::receiveSubtitle(SubtitleFrame & frame)
+{
+    DPTR_D(VideoRenderer);
+    // parse subtitle use libass
+    d->parseAssSubtitle(frame);
+    d->current_sub_frame = frame;
+}
+
 void VideoRenderer::setSourceSize(int width, int height)
 {
 	DPTR_D(VideoRenderer);
@@ -111,6 +119,9 @@ void VideoRenderer::renderVideo()
 //    fprintf(stderr, "xxxx: %.3f %.3f\n", d->current_frame.timestamp(), d->current_frame.ptsOfPkt());
 //    fflush(stderr);
     d->applyRenderFilter();
+
+    // render subtitle frame
+    d->renderSubtitleFrame();
 #endif
 
 }

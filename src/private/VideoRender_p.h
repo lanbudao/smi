@@ -5,6 +5,7 @@
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
 #include "sdk/filter/filter.h"
+#include "subtitle/subtitleframe.h"
 #include <cmath>
 
 NAMESPACE_BEGIN
@@ -38,6 +39,9 @@ public:
     void applyVideoFilter();
     void applyRenderFilter();
 
+    void parseAssSubtitle(SubtitleFrame &frame);
+    void renderSubtitleFrame();
+
     void* opaque;
     int renderer_width, renderer_height;
     VideoRenderer::OutAspectRatioMode out_ratio_mode;
@@ -56,6 +60,8 @@ public:
 	int orientation;
 
     std::list<Filter*> filters;
+
+    SubtitleFrame current_sub_frame;
 };
 
 int VideoRendererPrivate::rotation() const {
@@ -126,6 +132,19 @@ inline void VideoRendererPrivate::applyRenderFilter()
             f->apply(media_info, &current_frame);
         }
     }
+}
+
+void VideoRendererPrivate::parseAssSubtitle(SubtitleFrame & frame)
+{
+    AVSubtitle *data = frame.data();
+    for (int i = 0; i < data->num_rects; ++i) {
+        // TODO
+    }
+}
+
+void VideoRendererPrivate::renderSubtitleFrame()
+{
+    //TODO
 }
 
 NAMESPACE_END

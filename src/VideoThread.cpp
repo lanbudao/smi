@@ -5,6 +5,8 @@
 #include "OutputSet.h"
 #include "innermath.h"
 #include "framequeue.h"
+#include "subtitle/SubtitleDecoder.h"
+
 extern "C" {
 #include "libavutil/time.h"
 #include "libavutil/bprint.h"
@@ -12,6 +14,88 @@ extern "C" {
 }
 #define REFRESH_RATE 0.01
 NAMESPACE_BEGIN
+
+class SubtitleDecoderThread : public CThread
+{
+public:
+    SubtitleDecoderThread() :
+        CThread("subtitle decoder"),
+        abort(false),
+        pkts(nullptr),
+        serial(-1)
+    {
+
+    }
+
+    void setPackets(PacketQueue * p)
+    {
+        pkts = p;
+    }
+
+    void stop()
+    {
+        frames.clear();
+        abort = true;
+    }
+    void run()
+    {
+        bool pkt_valid = true;
+        Packet pkt;
+        SubtitleFrame frame;
+        flush_dec = false;
+        while (true) {
+            int ret = 0;
+            if (abort)
+                break;
+            if (flush_dec) {
+                pkt = Packet::createFlush();
+            }
+            else {
+                if (!pkts->prepared()) {
+                    msleep(1);
+                    continue;
+                }
+                pkt = pkts->dequeue(&pkt_valid, 10);
+                if (!pkt_valid) {
+                    continue;
+                }
+                flush_dec = pkt.isEOF();
+                serial = pkt.serial;
+                if (pkt.serial != pkts->serial()) {
+                    AVDebug("The subtitle pkt is obsolete.\n");
+                    continue;
+                }
+                if (pkt.isFlush()) {
+                    AVDebug("Seek is required, flush subtitle decoder.\n");
+                    decoder->flush();
+                    /* must clear the frames buffer for seek*/
+                    frames.clear();
+                    continue;
+                }
+            }
+            // decode
+            frame = decoder->decode(&pkt, &ret);
+            if (!frame.valid()) {
+                if (ret == AVERROR_EOF) {
+                    flush_dec = false;
+                }
+                continue;
+            }
+            frame.setSerial(serial);
+            frames.enqueue(frame);
+        }
+        CThread::run();
+    }
+
+    bool abort;
+    PacketQueue *pkts;
+    SubtitleFrameQueue frames;
+    SubtitleDecoder* decoder;
+    OutputSet* output;
+    int serial;
+    // flush decoder when media is eof
+    bool flush_dec;
+};
 
 class VideoDecoderThread: public CThread
 {
@@ -103,12 +187,21 @@ public:
 		last_frame_pts(0.0),
 		last_frame_duration(0.0),
 		frame_timer(0.0),
-		step(false)
+		step(false),
+        subtitle_decode_thread(nullptr),
+        subtitle_decoder(nullptr),
+        subtitle_packets(nullptr)
     {
         decode_thread = new VideoDecoderThread;
     }
     virtual ~VideoThreadPrivate()
     {
+        if (subtitle_decode_thread) {
+            subtitle_decode_thread->stop();
+            subtitle_decode_thread->wait();
+            delete subtitle_decode_thread;
+            subtitle_decode_thread = nullptr;
+        }
         if (decode_thread) {
             decode_thread->stop();
             decode_thread->wait();
@@ -159,6 +252,11 @@ public:
     double frame_timer;
 	bool step;
 	std::function<void()> stepCallback;
+
+    /* for subtitle */
+    SubtitleDecoderThread *subtitle_decode_thread;
+    SubtitleDecoder *subtitle_decoder;
+    PacketQueue *subtitle_packets;
 };
 
 VideoThread::VideoThread():
@@ -170,6 +268,27 @@ VideoThread::VideoThread():
 VideoThread::~VideoThread()
 {
 
+}
+
+void VideoThread::setSubtitleDecoder(AVDecoder * decoder)
+{
+    DPTR_D(VideoThread);
+    d->subtitle_decoder = dynamic_cast<SubtitleDecoder *>(decoder);
+    if (d->subtitle_decode_thread)
+        delete d->subtitle_decode_thread;
+    d->subtitle_decode_thread = new SubtitleDecoderThread;
+}
+
+PacketQueue * VideoThread::subtitlePackets()
+{
+    return d_func()->subtitle_packets;
+}
+
+void VideoThread::setSubtitlePackets(PacketQueue * packets)
+{
+    DPTR_D(VideoThread);
+    d->subtitle_packets = packets;
+    d->subtitle_decode_thread->setPackets(packets);
 }
 
 void VideoThread::pause(bool p)
@@ -212,6 +331,11 @@ void VideoThread::run()
 	VideoFrameQueue* frames = &d->decode_thread->frames;
     d->decode_thread->start();
 	VideoFrame* frame = &d->last_display_frame;
+
+    // subtitle
+    SubtitleFrameQueue *subtitle_frames = &d->subtitle_decode_thread->frames;
+    d->subtitle_decode_thread->decoder = d->subtitle_decoder;
+    d->subtitle_decode_thread->start();
 
     while (true) {
         if (d->stopped)
@@ -263,6 +387,24 @@ void VideoThread::run()
 //                               frame->pos(),
                                frame->serial());
 			clock->updateClock(SyncToExternalClock, SyncToVideo);
+        }
+        // process subtitle
+        if (d->subtitle_decode_thread) {
+            while (true) {
+                SubtitleFrame sub_frame = subtitle_frames->dequeue(&valid, 10);
+                if (!valid) {
+                    break;
+                }
+                if (sub_frame.serial() != d->subtitle_packets->serial()) {
+                    continue;
+                }
+                if (frame->timestamp() >= sub_frame.start && frame->timestamp() <= sub_frame.end) {
+                    // send subtitle frame
+                    d->output->lock();
+                    d->output->sendSubtitleFrame(sub_frame);
+                    d->output->unlock();
+                }
+            }
         }
         applyFilters(frame);
 		d->output->lock();

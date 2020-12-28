@@ -95,4 +95,16 @@ void OutputSet::sendVideoFrame(const VideoFrame &frame)
     }
 }
 
+void OutputSet::sendSubtitleFrame(SubtitleFrame & frame)
+{
+    DPTR_D(OutputSet);
+    std::list<AVOutput *>::iterator itor;
+    for (itor = d->outputs.begin(); itor != d->outputs.end(); itor++) {
+        VideoRenderer *renderer = static_cast<VideoRenderer *>(*itor);
+        if (!renderer->isAvailable())
+            continue;
+        renderer->receiveSubtitle(frame);
+    }
+}
+
 NAMESPACE_END

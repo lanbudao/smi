@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
         sprintf(title, "Buffering: %d%%", FORCE_INT(p * 100));
         SDL_SetWindowTitle(window, title);
     });
-    player->setBufferPara(BufferTime, 3 * 1000);
+    //player->setBufferPara(BufferTime, 3 * 1000);
     //player->setClockType(SyncToVideo);
     //player->setResampleType(ResampleSoundtouch);
     //player->setSpeed(2.0);

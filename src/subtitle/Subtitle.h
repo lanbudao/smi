@@ -5,6 +5,7 @@
 #include "sdk/DPTR.h"
 #include "sdk/mediainfo.h"
 #include "Packet.h"
+#include "subtitleframe.h"
 #include <vector>
 
 struct AVFrame;
@@ -14,29 +15,29 @@ enum SubtitleType {
     SubtitleText,
     SubtitlePixmap
 };
-
-class SubtitleFramePrivate;
-class SubtitleFrame
-{
-    DPTR_DECLARE_PRIVATE(SubtitleFrame);
-public:
-    SubtitleFrame();
-    ~SubtitleFrame();
-
-    bool isValid() const { return start < stop; }
-    bool operator < (const SubtitleFrame &f) const { return stop < f.stop; }
-    inline bool operator < (double t) const { return stop < t; }
-    void push_back(const std::string &text);
-    const std::vector<std::string> &texts() const;
-    const std::vector<AVFrame*> &images() const;
-    void reset();
-
-    double start, stop;
-    SubtitleType type;
-
-private:
-    DPTR_DECLARE(SubtitleFrame);
-};
+//
+//class SubtitleFramePrivate;
+//class SubtitleFrame
+//{
+//    DPTR_DECLARE_PRIVATE(SubtitleFrame);
+//public:
+//    SubtitleFrame();
+//    ~SubtitleFrame();
+//
+//    bool isValid() const { return start < stop; }
+//    bool operator < (const SubtitleFrame &f) const { return stop < f.stop; }
+//    inline bool operator < (double t) const { return stop < t; }
+//    void push_back(const std::string &text);
+//    const std::vector<std::string> &texts() const;
+//    const std::vector<AVFrame*> &images() const;
+//    void reset();
+//
+//    double start, stop;
+//    SubtitleType type;
+//
+//private:
+//    DPTR_DECLARE(SubtitleFrame);
+//};
 
 class SubtitlePrivate;
 class Subtitle

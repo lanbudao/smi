@@ -119,66 +119,66 @@ void SubtitleReadThread::run()
         }
     }
 }
-
-class SubtitleFramePrivate
-{
-public:
-    SubtitleFramePrivate()
-    {
-
-    }
-    ~SubtitleFramePrivate()
-    {
-        clear();
-    }
-
-    void clear()
-    {
-        texts.clear();
-        std::vector<AVFrame*>::iterator it = images.begin();
-        for (; it != images.end(); ++it) {
-            av_frame_free(&(*it));
-        }
-    }
-
-    std::vector<std::string> texts; //used for SUBTITLE_ASS and SUBTITLE_TEXT
-    std::vector<AVFrame*> images;   //used for SUBTITLE_PIXMAP
-};
-
-SubtitleFrame::SubtitleFrame():
-    d_ptr(new SubtitleFramePrivate),
-    start(0),
-    stop(0),
-    type(SubtitleText)
-{
-
-}
-
-SubtitleFrame::~SubtitleFrame()
-{
-
-}
-
-void SubtitleFrame::push_back(const std::string & text)
-{
-    d_func()->texts.push_back(text);
-}
-
-const std::vector<std::string>& SubtitleFrame::texts() const
-{
-    return d_func()->texts;
-}
-
-const std::vector<AVFrame*>& SubtitleFrame::images() const
-{
-    return d_func()->images;
-}
-
-void SubtitleFrame::reset()
-{
-    start = stop = 0;
-    d_func()->clear();
-}
+//
+//class SubtitleFramePrivate
+//{
+//public:
+//    SubtitleFramePrivate()
+//    {
+//
+//    }
+//    ~SubtitleFramePrivate()
+//    {
+//        clear();
+//    }
+//
+//    void clear()
+//    {
+//        texts.clear();
+//        std::vector<AVFrame*>::iterator it = images.begin();
+//        for (; it != images.end(); ++it) {
+//            av_frame_free(&(*it));
+//        }
+//    }
+//
+//    std::vector<std::string> texts; //used for SUBTITLE_ASS and SUBTITLE_TEXT
+//    std::vector<AVFrame*> images;   //used for SUBTITLE_PIXMAP
+//};
+//
+//SubtitleFrame::SubtitleFrame():
+//    d_ptr(new SubtitleFramePrivate),
+//    start(0),
+//    stop(0),
+//    type(SubtitleText)
+//{
+//
+//}
+//
+//SubtitleFrame::~SubtitleFrame()
+//{
+//
+//}
+//
+//void SubtitleFrame::push_back(const std::string & text)
+//{
+//    d_func()->texts.push_back(text);
+//}
+//
+//const std::vector<std::string>& SubtitleFrame::texts() const
+//{
+//    return d_func()->texts;
+//}
+//
+//const std::vector<AVFrame*>& SubtitleFrame::images() const
+//{
+//    return d_func()->images;
+//}
+//
+//void SubtitleFrame::reset()
+//{
+//    start = stop = 0;
+//    d_func()->clear();
+//}
 
 class LoadAsync: public CThread {
 public:
@@ -187,8 +187,6 @@ public:
 private:
     SubtitlePrivate *priv;
 };
-
-SubtitleDecoderId SubtitleDecoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 
 class SubtitlePrivate
 {
@@ -260,7 +258,7 @@ void SubtitlePrivate::loadInternal()
 bool SubtitlePrivate::prepareFrame()
 {
     SubtitleFrame f;
-    if (current_frame.isValid() && current_frame.stop > time_stamp)
+    if (current_frame.valid() && current_frame.end > time_stamp)
         return true;
     while (frames.size() > 0) {
         f = frames.front();
@@ -269,12 +267,12 @@ bool SubtitlePrivate::prepareFrame()
             return false;
         }
         frames.dequeue();
-        if (time_stamp > f.start && time_stamp < f.stop) {
+        if (time_stamp > f.start && time_stamp < f.end) {
             break;
         }
         f.reset();
     }
-    if (f.isValid()) {
+    if (f.valid()) {
         current_frame = f;
         return true;
     }
@@ -353,7 +351,7 @@ bool Subtitle::processLine(Packet *pkt)
 {
     DPTR_D(Subtitle);
     SubtitleFrame f = d->decoder->processLine(pkt);
-    if (!f.isValid())
+    if (!f.valid())
         return false;
     d->frames.enqueue(f);
     //if (d->frames.empty() || d->frames.back() < f) {

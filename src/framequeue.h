@@ -5,6 +5,7 @@
 #include "util/BlockQueue.h"
 #include "AudioFrame.h"
 #include "VideoFrame.h"
+#include "subtitle/subtitleframe.h"
 
 NAMESPACE_BEGIN
 
@@ -36,6 +37,17 @@ public:
     ~VideoFrameQueue() PU_DECL_OVERRIDE {}
 };
 
+class SubtitleFrameQueue : public BlockQueue<SubtitleFrame>
+{
+public:
+    SubtitleFrameQueue()
+    {
+        setCapacity(SUBPICTURE_QUEUE_SIZE);
+        setThreshold(SUBPICTURE_QUEUE_SIZE);
+        blockFull(true);
+    }
+    ~SubtitleFrameQueue() PU_DECL_OVERRIDE {}
+};
 
 NAMESPACE_END
 #endif // FRAMEQUEUE_H
