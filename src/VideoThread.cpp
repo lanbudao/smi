@@ -389,20 +389,29 @@ void VideoThread::run()
 			clock->updateClock(SyncToExternalClock, SyncToVideo);
         }
         // process subtitle
+        SubtitleFrame sub_frame;
         if (d->subtitle_decode_thread) {
             while (true) {
-                SubtitleFrame sub_frame = subtitle_frames->dequeue(&valid, 10);
+                sub_frame = subtitle_frames->front(&valid, 10);
                 if (!valid) {
                     break;
                 }
                 if (sub_frame.serial() != d->subtitle_packets->serial()) {
                     continue;
                 }
+                // video is late
+                if (frame->timestamp() < sub_frame.start)
+                    break;
+                sub_frame = subtitle_frames->dequeue(&valid, 10);
+                if (!valid) {
+                    break;
+                }
                 if (frame->timestamp() >= sub_frame.start && frame->timestamp() <= sub_frame.end) {
                     // send subtitle frame
                     d->output->lock();
                     d->output->sendSubtitleFrame(sub_frame);
                     d->output->unlock();
+                    break;
                 }
             }
         }

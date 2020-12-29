@@ -9,6 +9,7 @@ extern "C" {
 #include "inner.h"
 #include "plaintext.h"
 #include "private/AVDecoder_p.h"
+#include "subtitle/assrender.h"
 
 NAMESPACE_BEGIN
 
@@ -43,6 +44,7 @@ public:
     SubtitleFrame processLine(Packet *pkt);
     std::string getText(double pts) const;
 
+    virtual void onOpen();
     virtual SubtitleFrame decode(Packet *pkt, int *ret);
 
 private:
@@ -53,6 +55,7 @@ private:
     SubtitleFrame frame;//current frame
     AVSubtitle av_subtitle;
     MediaInfo *media_info;
+    ASSAide::ASSRender ass_render;
 };
 
 extern SubtitleDecoderId SubtitleDecoderId_FFmpeg;
@@ -308,6 +311,12 @@ SubtitleFrame SubtitleDecoderFFmpeg::processLine(Packet *pkt)
     return frame;
 }
 
+void SubtitleDecoderFFmpeg::onOpen()
+{
+    DPTR_D(SubtitleDecoderFFmpeg);
+    ass_render.initialize(d->codec_ctx, 1280, 720);
+}
+
 SubtitleFrame SubtitleDecoderFFmpeg::decode(Packet *pkt, int *ret)
 {
     DPTR_D(SubtitleDecoderFFmpeg);
@@ -330,6 +339,7 @@ SubtitleFrame SubtitleDecoderFFmpeg::decode(Packet *pkt, int *ret)
             });
     else
         pts = pkt->pts;
+    ass_render.addSubtitleToTrack(av_subtitle);
     frame.start = pts + FORCE_DOUBLE(av_subtitle->start_display_time) / 1000;
     frame.end = pts + FORCE_DOUBLE(av_subtitle->end_display_time) / 1000;
     frame.setSerial(pkt->serial);

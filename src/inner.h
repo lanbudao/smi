@@ -10,6 +10,7 @@ extern "C" {
 #include <libavutil/error.h>
 #include <libavutil/attributes.h>
 #include "libavutil/version.h"
+#include <libavcodec/version.h>
 #ifdef __cplusplus
 }
 #endif

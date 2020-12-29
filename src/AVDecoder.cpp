@@ -30,6 +30,15 @@ AVCodecContext * AVDecoder::codecCtx()
     return d->codec_ctx;
 }
 
+void AVDecoder::setCodeOptions(std::map<std::string, std::string>& options)
+{
+    DPTR_D(AVDecoder);
+    std::map<std::string, std::string>::iterator it = options.begin();
+    for (; it != options.end(); ++it) {
+        av_dict_set(&d->dict, it->first.c_str(), it->second.c_str(), AV_DICT_APPEND);
+    }
+}
+
 bool AVDecoder::open(const string &extra)
 {
     DPTR_D(AVDecoder);
@@ -117,11 +126,6 @@ void AVDecoderPrivate::flush()
         return;
     if (codec_ctx)
         avcodec_flush_buffers(codec_ctx);
-}
-
-void AVDecoderPrivate::applyOptionsForDict()
-{
-    //TODO
 }
 
 bool AVDecoder::isAvailable() const {

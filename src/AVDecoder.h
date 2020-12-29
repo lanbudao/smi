@@ -24,6 +24,8 @@ public:
     virtual std::string name() const = 0;
     virtual std::string description() const = 0;
 
+    void setCodeOptions(std::map<std::string, std::string> &options);
+
     virtual bool open(const string &extra = string());
     virtual void onOpen() {}
     virtual bool close();

@@ -17,6 +17,7 @@
 #include "subtitle/Subtitle.h"
 #include "filter/Filter.h"
 #include "subtitle/subtitledecoder.h"
+#include "inner.h"
 
 NAMESPACE_BEGIN
 
@@ -300,6 +301,11 @@ bool PlayerPrivate::setupVideoThread()
         SubtitleDecoder *dec = SubtitleDecoder::create(subtitle_dec_ids.at(i));
         if (!dec)
             continue;
+        if (FFMPEG_MODULE_CHECK(LIBAVCODEC, 57, 26, 100)) {
+            std::map < std::string, std::string > options;
+            options.insert(std::make_pair("sub_text_format", "ass"));
+            dec->setCodeOptions(options);
+        }
         dec->initialize(demuxer->formatCtx(), demuxer->stream(MediaTypeSubtitle));
         if (dec->open()) {
             subtitle_dec = dec;

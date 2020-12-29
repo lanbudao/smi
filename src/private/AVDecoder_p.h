@@ -54,7 +54,6 @@ public:
     virtual bool close() {return true;}
 
     void flush();
-    void applyOptionsForDict();
 
     bool opened;
     AVCodecContext *codec_ctx;

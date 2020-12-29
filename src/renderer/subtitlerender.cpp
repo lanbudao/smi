@@ -12,10 +12,12 @@ NAMESPACE_BEGIN
 class SubtitleRenderPrivate
 {
 public:
-    SubtitleRenderPrivate():
-        font(nullptr),
+    SubtitleRenderPrivate()
+#ifdef SMI_HAVE_FREETYPE
+        :font(nullptr),
         fontsize(22),
         pos(1.0)
+#endif
     {
 #ifdef SMI_HAVE_FREETYPE
         layout.SetAlignment(FTGL::ALIGN_CENTER);
@@ -50,15 +52,19 @@ SubtitleRender::~SubtitleRender()
 void SubtitleRender::setRenderWidth(int w, int h)
 {
     DPTR_D(SubtitleRender);
+#ifdef SMI_HAVE_FREETYPE
     d->render_width = w;
     d->render_height = h;
     d->layout.SetLineLength(w);
+#endif
 }
 
 void SubtitleRender::setRenderPos(float pos)
 {
     DPTR_D(SubtitleRender);
+#ifdef SMI_HAVE_FREETYPE
     d->pos = pos;
+#endif
 }
 
 void SubtitleRender::setFontFile(const std::string & file)
