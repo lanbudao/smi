@@ -112,10 +112,11 @@ public:
     bool installFilter(VideoFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
     bool installFilter(RenderFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
 
-    bool setSubtitleStream(int stream);
-    std::map<std::string, std::string> internalSubtitles() const;
-    Subtitle* internalSubtitle();
-    Subtitle* addExternalSubtitle(const std::string &fileName, bool enabled = false);
+    /* 
+     *\brief Use 'setWantedStreamSpec' to swtich the track of internal subtitle, 
+     * or 'addExternalSubtitle' to load external subtitle
+     */
+    Subtitle* addExternalSubtitle(const std::string &fileName, bool enabled = true);
     void enableExternalSubtitle(Subtitle *sub);
     void removeExternalSubtitle(Subtitle *sub);
     std::list<Subtitle*> externalSubtitles();

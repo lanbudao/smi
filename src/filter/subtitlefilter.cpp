@@ -36,8 +36,6 @@ SubtitleFilter::SubtitleFilter(Player *player, int track, const std::string &fon
 {
     if (player) {
         setPlayer(player);
-        if (track >= 0)
-            player->setSubtitleStream(track);
     }
     setFont(font);
 }

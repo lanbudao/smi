@@ -308,32 +308,6 @@ bool Player::installFilter(RenderFilter * filter, VideoRenderer * render, int in
     return d->installFilter(filter, render, index);
 }
 
-bool Player::setSubtitleStream(int stream)
-{
-    DPTR_D(Player);
-    //if (d->demuxer->streamIndex(MediaTypeSubtitle) == stream)
-    //    return true;
-    //if (!d->demuxer->isLoaded())
-    //    return false;
-    //if (!d->demuxer->setStreamIndex(MediaTypeSubtitle, stream))
-    //    return false;
-    //if (d->mediaStreamChanged)
-    //    d->mediaStreamChanged(MediaTypeSubtitle, stream);
-    //return d->applySubtitleStream();
-    return false;
-}
-
-std::map<string, string> Player::internalSubtitles() const
-{
-    return std::map<string, string>();
-}
-
-Subtitle *Player::internalSubtitle()
-{
-    DPTR_D(Player);
-    return &d->internal_subtitle;
-}
-
 void Player::enableExternalSubtitle(Subtitle *sub)
 {
     DPTR_D(Player);

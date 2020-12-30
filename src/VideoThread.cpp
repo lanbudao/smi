@@ -6,12 +6,14 @@
 #include "innermath.h"
 #include "framequeue.h"
 #include "subtitle/SubtitleDecoder.h"
+#include "subtitle/assrender.h"
 
 extern "C" {
 #include "libavutil/time.h"
 #include "libavutil/bprint.h"
 #include "libavutil/log.h"
 }
+
 #define REFRESH_RATE 0.01
 NAMESPACE_BEGIN
 
@@ -25,6 +27,11 @@ public:
         serial(-1)
     {
 
+    }
+
+    void setAssParseContext(AVCodecContext *ctx, int w, int h)
+    {
+        ass_render.initialize(ctx, w, h);
     }
 
     void setPackets(PacketQueue * p)
@@ -81,6 +88,7 @@ public:
                 }
                 continue;
             }
+            ass_render.addSubtitleToTrack(frame.data());
             frame.setSerial(serial);
             frames.enqueue(frame);
         }
@@ -95,6 +103,8 @@ public:
     int serial;
     // flush decoder when media is eof
     bool flush_dec;
+
+    ASSAide::ASSRender ass_render;
 };
 
 class VideoDecoderThread: public CThread
@@ -277,6 +287,10 @@ void VideoThread::setSubtitleDecoder(AVDecoder * decoder)
     if (d->subtitle_decode_thread)
         delete d->subtitle_decode_thread;
     d->subtitle_decode_thread = new SubtitleDecoderThread;
+    d->subtitle_decode_thread->setAssParseContext(
+        d->subtitle_decoder->codecCtx(),
+        d->decoder->codecCtx()->width,
+        d->decoder->codecCtx()->height);
 }
 
 PacketQueue * VideoThread::subtitlePackets()

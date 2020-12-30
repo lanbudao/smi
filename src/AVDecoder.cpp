@@ -35,7 +35,7 @@ void AVDecoder::setCodeOptions(std::map<std::string, std::string>& options)
     DPTR_D(AVDecoder);
     std::map<std::string, std::string>::iterator it = options.begin();
     for (; it != options.end(); ++it) {
-        av_dict_set(&d->dict, it->first.c_str(), it->second.c_str(), AV_DICT_APPEND);
+        av_dict_set(&d->dict, it->first.c_str(), it->second.c_str(), 0);
     }
 }
 
