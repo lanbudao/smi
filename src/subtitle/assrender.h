@@ -12,81 +12,26 @@ extern "C" {
 #define _r(c)  ((c)>>24)
 #define _g(c)  (((c)>>16)&0xFF)
 #define _b(c)  (((c)>>8)&0xFF)
-//#define _a(c)  ((c)&0xFF)
-#define _a(c)  ((0xFF-(c)) &0xFF)
+#define _a(c)  ((c)&0xFF)
+//#define _a(c)  ((0xFF-(c)) &0xFF)
 
-#define qRgba2(r, g, b, a) ((a << 24) | (r << 16) | (g  << 8) | b)
 /*
  * ASS_Image: 1bit alpha per pixel + 1 rgb per image. less memory usage
  */
 #define ARGB32_SET(C, R, G, B, A) \
-    C[0] = (A); \
-    C[1] = (R); \
-    C[2] = (G); \
-    C[3] = (B);
+    C[3] = (A); \
+    C[2] = (R); \
+    C[1] = (G); \
+    C[0] = (B);
 #define ARGB32_ADD(C, R, G, B, A) \
-    C[0] += (A); \
-    C[1] += (R); \
-    C[2] += (G); \
-    C[3] += (B);
-#define ARGB32_A(C) (C[0])
-#define ARGB32_R(C) (C[1])
-#define ARGB32_G(C) (C[2])
-#define ARGB32_B(C) (C[3])
-
-// render 1 ass image into a 32bit QImage with alpha channel.
-//use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
-void RenderASS(
-    uint8_t *dst_data/*image*/, 
-    ASS_Image* image,
-    int stride)
-{
-    //const uint8_t *src = (const uint8_t*)img.data.constData();
-    // use QRgb to avoid endian issue
-    //QRgb *dst = (QRgb*)image->constBits() + dstY * image->width() + dstX;
-    // k*src+(1-k)*dst
-    while (image) {
-        const uint8_t a = 255 - _a(image->color);
-        if (a == 0) {
-            image = image->next;
-            continue;
-        }
-        const uint8_t r = _r(image->color);
-        const uint8_t g = _g(image->color);
-        const uint8_t b = _b(image->color);
-        unsigned char *src;
-        unsigned char *dst;
-        src = image->bitmap;
-        dst = dst_data + image->dst_y * stride + image->dst_x * 4;
-
-        for (int y = 0; y < image->h; ++y) {
-            for (int x = 0; x < image->w; ++x) {
-                const unsigned k = ((unsigned)src[x])*a / 255;
-                uint8_t *c = (uint8_t*)(&dst[x]);
-
-                const unsigned A = ARGB32_A(c);
-                if (A == 0) { // dst color can be ignored
-                    ARGB32_SET(c, r, g, b, k);
-                }
-                else if (k == 0) { //no change
-                    // do nothing
-                }
-                else if (k == 255) {
-                    ARGB32_SET(c, r, g, b, k);
-                }
-                else {
-                    const unsigned R = ARGB32_R(c);
-                    const unsigned G = ARGB32_G(c);
-                    const unsigned B = ARGB32_B(c);
-                    ARGB32_ADD(c, r == R ? 0 : k * (r - R) / 255, g == G ? 0 : k * (g - G) / 255, b == B ? 0 : k * (b - B) / 255, a == A ? 0 : k * (a - A) / 255);
-                }
-            }
-            src += image->stride;
-            dst += stride;
-        }
-        image = image->next;
-    }
-}
+    C[3] += (A); \
+    C[2] += (R); \
+    C[1] += (G); \
+    C[0] += (B);
+#define ARGB32_A(C) (C[3])
+#define ARGB32_R(C) (C[2])
+#define ARGB32_G(C) (C[1])
+#define ARGB32_B(C) (C[0])
 
 namespace ASSAide {
 class ASSRender
@@ -167,7 +112,7 @@ public:
             return AVERROR(ENOMEM);
 
         memset(sub->rects[0]->data[0], 0x00, height * stride);
-#if 0
+#if 1
         while (image) {
             const uint8_t a = 255 - _a(image->color);
             if (a == 0) {
@@ -183,8 +128,18 @@ public:
             for (int y = 0; y < image->h; ++y) {
                 for (int x = 0; x < image->w; ++x) {
                     const unsigned k = ((unsigned)src[x])*a / 255;
-                    uint8_t *c = (uint8_t*)(&dst[x]);
-
+                    uint8_t *c = (uint8_t*)(&dst[x * 4]);
+                    //test
+                    //dst[x * 4 + 0] = 255;
+                    //dst[x * 4 + 1] = 255;
+                    //dst[x * 4 + 2] = 0;
+                    //dst[x * 4 + 3] = 255;
+                    //c[0] = 255;
+                    //c[1] = 255;
+                    //c[2] = 0;
+                    //c[3] = 255;
+                    //continue;
+                    //<-----
                     const unsigned A = ARGB32_A(c);
                     if (A == 0) { // dst color can be ignored
                         ARGB32_SET(c, r, g, b, k);
