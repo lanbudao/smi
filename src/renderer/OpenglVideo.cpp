@@ -5,7 +5,7 @@
 #include "GeometryRenderer.h"
 #include "OpenglAide.h"
 #include "AVLog.h"
-#include "subtitlerender.h"
+//#include "subtitlerender.h"
 //#include <GL/GLU.h>
 //#define TEST_YUV
 #include "glpackage.h"
@@ -50,7 +50,7 @@ public:
 		gr(nullptr),
 		user_shader(nullptr)
 	{
-        sub_render.setFontFile("E:/ht.ttf");
+        //sub_render.setFontFile("E:/ht.ttf");
 	}
 	~OpenglVideoPrivate()
 	{
@@ -78,7 +78,7 @@ public:
 	GeometryRenderer* gr;
 	VideoShader *user_shader;
     Color background;
-    SubtitleRender sub_render;
+    //SubtitleRender sub_render;
 };
 
 void OpenglVideoPrivate::resetGL() {

@@ -446,10 +446,10 @@ void VideoThread::run()
 			d->stepCallback();
 		}
         //AVDebug("video frame pts: %.3f\n", frame->timestamp());
-        AVDebug("A-V: %.3f, %.3f, %.3f\n",
-            clock->value(SyncToAudio),
-            clock->value(SyncToVideo),
-            clock->value(SyncToAudio) - clock->value(SyncToVideo));
+        //AVDebug("A-V: %.3f, %.3f, %.3f\n",
+        //    clock->value(SyncToAudio),
+        //    clock->value(SyncToVideo),
+        //    clock->value(SyncToAudio) - clock->value(SyncToVideo));
     }
     d->packets.clear();
     CThread::run();

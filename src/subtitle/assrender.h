@@ -2,8 +2,10 @@
 #define ASS_RENDER_H
 
 extern "C" {
+#ifdef SMI_HAVE_LIBASS
 #include "ass/ass.h"
 #include "ass/ass_types.h"
+#endif
 #include "libavcodec/avcodec.h"
 }
 #define UNPREMULTIPLY_ALPHA(x, y) ((((x) << 16) - ((x) << 9) + (x)) / ((((x) + (y)) << 8) - ((x) + (y)) - (y) * (x)))
@@ -38,9 +40,11 @@ class ASSRender
 {
 public:
     ASSRender() :
+#ifdef SMI_HAVE_LIBASS
         library(nullptr),
         renderer(nullptr),
         assTrack(nullptr),
+#endif
         width(0),
         height(0),
         init_flag(false)
@@ -49,18 +53,21 @@ public:
     }
     ~ASSRender()
     {
+#ifdef SMI_HAVE_LIBASS
         if (assTrack)
             ass_free_track(assTrack);
         if (renderer)
             ass_renderer_done(renderer);
         if (library)
             ass_library_done(library);
+#endif
     }
 
     bool initialized() { return init_flag; }
 
     int initialize(AVCodecContext* ctx, int w, int h)
     {
+#ifdef SMI_HAVE_LIBASS
         library = ass_library_init();
         if (!library)
             return AVERROR(EINVAL);
@@ -78,11 +85,13 @@ public:
         width = w;
         height = h;
         init_flag = true;
+#endif
         return 0;
     }
 
     int addSubtitleToTrack(AVSubtitle* subtitle)
     {
+#ifdef SMI_HAVE_LIBASS
         const int64_t start_time = av_rescale_q(subtitle->pts, { 1,AV_TIME_BASE }, { 1,1000 });
         const int64_t duration = subtitle->end_display_time + 1000;
         for (int i = 0; i < subtitle->num_rects; i++)
@@ -94,9 +103,11 @@ public:
         int detect_change;
         ASS_Image *image = ass_render_frame(renderer, assTrack, start_time, &detect_change);
         return convertRGBA(width, height, image, subtitle);
-
+#endif
+        return 0;
     }
 
+#ifdef SMI_HAVE_LIBASS
     int convertRGBA(int width, int height, ASS_Image* image, AVSubtitle* sub)
     {
         if (!image || !sub || !width || !height)
@@ -211,11 +222,14 @@ public:
 #endif
         return 0;
     }
+#endif
 
 private:
+#ifdef SMI_HAVE_LIBASS
     ASS_Library* library;
     ASS_Renderer* renderer;
     ASS_Track* assTrack;
+#endif
     int width;
     int height;
     bool init_flag;

@@ -160,6 +160,7 @@ public:
 
     void applyVideoFilter();
     void applyRenderFilter();
+    void processSubtitleSeek();
     void prepareExternalSubtitleFrame();
     void renderSubtitleFrame();
 
@@ -255,6 +256,17 @@ inline void VideoRendererPrivate::applyRenderFilter()
                 continue;
             f->apply(media_info, &current_frame);
         }
+    }
+}
+
+void VideoRendererPrivate::processSubtitleSeek()
+{
+    std::list<Subtitle*>::iterator it = subtitles.begin();
+    for (it; it != subtitles.end(); ++it) {
+        Subtitle* subtitle = *it;
+        if (!subtitle)
+            continue;
+        subtitle->processSeek();
     }
 }
 

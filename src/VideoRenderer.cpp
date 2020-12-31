@@ -54,6 +54,9 @@ void VideoRenderer::receive(const VideoFrame &frame)
     if (FuzzyCompare(ratio, d->source_aspect_ratio))
         CALL_BACK(sourceAspectRatioChanged, d->source_aspect_ratio);
 	setSourceSize(frame.width(), frame.height());
+    if (frame.serial() != d->current_frame.serial()) {
+        d->processSubtitleSeek();
+    }
     d->current_frame = frame;
     d->prepareExternalSubtitleFrame();
     update();

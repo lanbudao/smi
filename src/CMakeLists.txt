@@ -112,7 +112,6 @@ list(APPEND HEADERS
     OutputSet.h
     Packet.h
     PacketQueue.h
-    SubtitleDecoder.h
     VideoDecoder.h
     VideoFormat.h
     VideoFrame.h
@@ -143,17 +142,17 @@ list(APPEND HEADERS
     renderer/VideoShader.h
     renderer/VideoShader_p.h
     renderer/glpackage.h
-    renderer/subtitlerender.h
     sdk/AVLog.h
     sdk/DPTR.h
     sdk/filter/Filter.h
     sdk/filter/LibAVFilter.h
-    sdk/filter/subtitlefilter.h
     sdk/global.h
     sdk/mediainfo.h
     sdk/player.h
-    subtitle/Subtitle.h
+    sdk/subtitle.h
+    subtitle/assrender.h
     subtitle/plaintext.h
+    subtitle/SubtitleFrame.h
     subtitle/subtitledecoder.h
     util/BlockQueue.h
     util/CThread.h
@@ -199,7 +198,6 @@ list(APPEND SOURCES
 	decoder/video/VideoDecoderFFmpegBase.cpp
 	filter/Filter.cpp
 	filter/LibAVFilter.cpp
-	filter/subtitlefilter.cpp
 	glad/src/glad.c
 	output/audio/AudioOutputPortAudio.cpp
 	output/audio/audiooutputdsound.cpp
@@ -213,22 +211,27 @@ list(APPEND SOURCES
 	renderer/VideoMaterial.cpp
 	renderer/VideoShader.cpp
 	renderer/glpackage.cpp
-	renderer/subtitlerender.cpp
 	resample/AudioResampleFFmpeg.cpp
 	resample/AudioResampleSoundTouch.cpp
 	subtitle/Subtitle.cpp
 	subtitle/plaintext.cpp
+    subtitle/SubtitleFrame.cpp
 	subtitle/subtitledecoder.cpp
 	subtitle/subtitledecoderffmpeg.cpp
 	util/CThread.cpp
 	util/logsink.cpp)
 	
-if (EXISTS ${FREETYPE_DIR})
-    list(APPEND EXTRA_DEFS -DSMI_HAVE_FREETYPE=1)
-	list(APPEND EXTRA_DEFS -DFTGL_LIBRARY_STATIC)
-	list(APPEND EXTRA_INCLUDE ${FREETYPE_DIR}/include/freetype2)
-	list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/ftgl)
-	link_directories(${FREETYPE_DIR}/lib)
+#if (EXISTS ${FREETYPE_DIR})
+#   list(APPEND EXTRA_DEFS -DSMI_HAVE_FREETYPE=1)
+#	list(APPEND EXTRA_DEFS -DFTGL_LIBRARY_STATIC)
+#	list(APPEND EXTRA_INCLUDE ${FREETYPE_DIR}/include/freetype2)
+#	list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/ftgl)
+#	link_directories(${FREETYPE_DIR}/lib)
+#endif()
+if (EXISTS ${LIBASS_DIR})
+    list(APPEND EXTRA_DEFS -DSMI_HAVE_LIBASS=1)
+	list(APPEND EXTRA_INCLUDE ${LIBASS_DIR}/include)
+	link_directories(${LIBASS_DIR}/lib)
 endif()
 # Include path
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
@@ -247,12 +250,10 @@ target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
 list(REMOVE_DUPLICATES EXTRA_LIBS)
 target_link_libraries(${MODULE} 
 	LINK_PRIVATE ${EXTRA_LIBS} 
-	LINK_PRIVATE soundtouch_static
-	LINK_PRIVATE opengl32)
-if (EXISTS ${FREETYPE_DIR})
+	LINK_PRIVATE soundtouch_static)
+if (EXISTS ${LIBASS_DIR})
 	target_link_libraries(${MODULE} 
-		LINK_PRIVATE freetype
-		LINK_PRIVATE ftgl)
+		LINK_PRIVATE ass)
 endif()
 
 set_target_properties(${MODULE} PROPERTIES

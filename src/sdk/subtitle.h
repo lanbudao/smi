@@ -24,6 +24,7 @@ public:
     void setCodec(const std::string &codec);
     void load();
 
+    void processSeek();
     void setTimestamp(double t, int w, int h);
     SubtitleFrame* frame();
 
