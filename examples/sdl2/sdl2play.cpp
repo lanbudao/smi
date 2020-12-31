@@ -3,7 +3,7 @@
 #include "sdk/player.h"
 #include "sdk/AVLog.h"
 #include "sdk/filter/LibAVFilter.h"
-#include "sdk/filter/subtitlefilter.h"
+#include "sdk/subtitle.h"
 #include "SDL.h"
 
 using namespace SMI;
@@ -79,12 +79,7 @@ int main(int argc, char *argv[])
     vfilter->setOptions("curves=vintage");
     //player->installFilter(vfilter, render);
     
-    SubtitleFilter *sub_filter = new SubtitleFilter;
-    sub_filter->setFile("E:/[冰河世纪：猛犸象的圣诞节].Ice.Age.A.Mammoth.Christmas.2011.720p.BluRay.x264-aAF.Eng.srt");
-    //player->installFilter(sub_filter);
-
-    SubtitleFilter *sub_internal_filter = new SubtitleFilter(player);
-    //player->installFilter(sub_internal_filter);
+    player->addExternalSubtitle("E:/sub.srt");
 
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");
@@ -159,7 +154,6 @@ int main(int argc, char *argv[])
     delete player;
     delete afilter;
     delete vfilter;
-    delete sub_filter;
     SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
     AVDebug("player uninitialize\n");

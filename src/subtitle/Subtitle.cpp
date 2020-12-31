@@ -1,4 +1,4 @@
-#include "Subtitle.h"
+#include "subtitle.h"
 #include "SubtitleDecoder.h"
 #include "AVLog.h"
 #include "CThread.h"
@@ -6,6 +6,9 @@
 #include "util/CThread.h"
 #include "Demuxer.h"
 #include "BlockQueue.h"
+#include "inner.h"
+#include "subtitle/subtitleframe.h"
+#include "subtitle/assrender.h"
 extern "C" {
 #include "libavcodec/avcodec.h"
 }
@@ -13,60 +16,41 @@ NAMESPACE_BEGIN
 
 #define SUB_QUEUE_SIZE 16
 
-typedef BlockQueue<SubtitleFrame> SubQueue;
+typedef std::list<SubtitleFrame> SubtitleQueue;
 class SubtitleReadThread : public CThread
 {
 public:
-    SubtitleReadThread();
-    ~SubtitleReadThread();
+    SubtitleReadThread() :
+        abort(false),
+        sbuffer(nullptr),
+        status(NoMedia),
+        decoder(nullptr)
+    {
+    }
+    ~SubtitleReadThread() {}
 
-    void setBuffer(SubQueue *buffer) { sbuffer = buffer; }
+    void setBuffer(SubtitleQueue *buffer) { sbuffer = buffer; }
     void setFile(const std::string &file) { file_name = file; }
-    void setDecoder(SubtitleDecoder* d) { decoder = d; }
+    void setLoadedCallback(std::function<void()> f) { loadedCallback = f; }
+    SubtitleDecoder *subtitleDecoder() { return decoder; }
     void run();
     void stop();
-    void seek(double pos, double incr, SeekType type);
+    MediaStatus mediaStatus() { return status; }
 
 private:
     bool abort;
-    bool eof;
     Demuxer demuxer;
     std::string file_name;
-    SubQueue *sbuffer;
-    SubtitleDecoder* decoder;
-    std::mutex wait_mutex;
-    std::condition_variable continue_read_cond;
+    SubtitleQueue *sbuffer;
     MediaInfo info;
-    bool seek_request;
-    double seek_pos; double seek_incr; SeekType seek_type;
+    MediaStatus status;
+    SubtitleDecoder *decoder;
+    std::function<void()> loadedCallback;
 };
-
-SubtitleReadThread::SubtitleReadThread() :
-    abort(false),
-    eof(false),
-    sbuffer(nullptr),
-    decoder(nullptr),
-    seek_request(false)
-{
-}
-
-SubtitleReadThread::~SubtitleReadThread()
-{
-}
 
 void SubtitleReadThread::stop()
 {
     abort = true;
-    continue_read_cond.notify_all();
-}
-
-void SubtitleReadThread::seek(double pos, double incr, SeekType type)
-{
-    seek_pos = pos;
-    seek_incr = incr;
-    seek_type = type;
-    seek_request = true;
-    continue_read_cond.notify_one();
 }
 
 void SubtitleReadThread::run()
@@ -75,157 +59,76 @@ void SubtitleReadThread::run()
     int stream;
     Packet pkt;
 
-    if (!sbuffer || !decoder)
+    status = Unloaded;
+    if (!sbuffer)
         return;
     demuxer.setMediaInfo(&info);
     demuxer.setMedia(file_name);
-    if (demuxer.load() < 0)
+    status = Loading;
+    if (demuxer.load() < 0) {
+        status = Invalid;
         return;
-    decoder->processHeader(&info);
-    sbuffer->setCapacity(SUB_QUEUE_SIZE);
+    }
+    decoder = SubtitleDecoder::create(SubtitleDecoderId_FFmpeg);
+    if (!decoder)
+        return;
+    if (FFMPEG_MODULE_CHECK(LIBAVCODEC, 57, 26, 100)) {
+        std::map < std::string, std::string > options;
+        options.insert(std::make_pair("sub_text_format", "ass"));
+        decoder->setCodeOptions(options);
+    }
+    decoder->initialize(demuxer.formatCtx(), demuxer.stream(MediaTypeSubtitle));
+    if (!decoder->open())
+        return;
     while (!abort) {
-        if (seek_request) {
-            demuxer.setSeekType(seek_type);
-            if (demuxer.seek(seek_pos, seek_incr)) {
-                sbuffer->clear();
-            }
-            seek_request = false;
-            eof = false;
-        }
-        if (sbuffer->checkFull()) {
-            /* wait 10 ms */
-            std::unique_lock<std::mutex> lock(wait_mutex);
-            continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
-            continue;
-        }
         ret = demuxer.readFrame();
         if (ret < 0) {
-            if (ret == AVERROR_EOF && !eof) {
-                eof = true;
+            if (ret == AVERROR_EOF) {
+                break;
             }
-            std::unique_lock<std::mutex> lock(wait_mutex);
-            continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));
             continue;
-        }
-        else {
-            eof = false;
         }
         stream = demuxer.stream();
         pkt = demuxer.packet();
 
         if (stream == demuxer.streamIndex(MediaTypeSubtitle)) {
-            SubtitleFrame frame = decoder->processLine(&pkt);
-            sbuffer->enqueue(frame);
+            SubtitleFrame frame = decoder->decode(&pkt, &ret);
+            if (!frame.valid()) {
+                continue;
+            }
+            /* 0 = graphics */
+            //if (frame.data()->format != 0) {
+            //    ass_render.addSubtitleToTrack(frame.data());
+            //}
+            sbuffer->push_back(frame);
         }
     }
+    auto compare = [=](const SubtitleFrame &f1, const SubtitleFrame &f2)->bool {
+        return f1.start <= f2.start;
+    };
+    sbuffer->sort(compare);
+    CALL_BACK(loadedCallback);
+    status = Loaded;
 }
-//
-//class SubtitleFramePrivate
-//{
-//public:
-//    SubtitleFramePrivate()
-//    {
-//
-//    }
-//    ~SubtitleFramePrivate()
-//    {
-//        clear();
-//    }
-//
-//    void clear()
-//    {
-//        texts.clear();
-//        std::vector<AVFrame*>::iterator it = images.begin();
-//        for (; it != images.end(); ++it) {
-//            av_frame_free(&(*it));
-//        }
-//    }
-//
-//    std::vector<std::string> texts; //used for SUBTITLE_ASS and SUBTITLE_TEXT
-//    std::vector<AVFrame*> images;   //used for SUBTITLE_PIXMAP
-//};
-//
-//SubtitleFrame::SubtitleFrame():
-//    d_ptr(new SubtitleFramePrivate),
-//    start(0),
-//    stop(0),
-//    type(SubtitleText)
-//{
-//
-//}
-//
-//SubtitleFrame::~SubtitleFrame()
-//{
-//
-//}
-//
-//void SubtitleFrame::push_back(const std::string & text)
-//{
-//    d_func()->texts.push_back(text);
-//}
-//
-//const std::vector<std::string>& SubtitleFrame::texts() const
-//{
-//    return d_func()->texts;
-//}
-//
-//const std::vector<AVFrame*>& SubtitleFrame::images() const
-//{
-//    return d_func()->images;
-//}
-//
-//void SubtitleFrame::reset()
-//{
-//    start = stop = 0;
-//    d_func()->clear();
-//}
-
-class LoadAsync: public CThread {
-public:
-    LoadAsync(SubtitlePrivate *d): priv(d) {}
-    void run();
-private:
-    SubtitlePrivate *priv;
-};
 
 class SubtitlePrivate
 {
 public:
     SubtitlePrivate():
-        enabled(false),
+        enabled(true),
         time_stamp(0),
-        decoder(nullptr),
-        load_async(nullptr),
         read_thread(nullptr)
     {
-        decoder = SubtitleDecoder::create(SubtitleDecoderId_FFmpeg);
-        if (!decoder) {
-            AVWarning("Subtitle decoder inited failed!\n");
-        }
+
     }
     virtual ~SubtitlePrivate()
     {
-        if (load_async) {
-            delete load_async;
-            load_async = nullptr;
-        }
-        if (decoder) {
-            delete decoder;
-            decoder = nullptr;
-        }
-        resetReadThread();
+        unload();
     }
-
-    void reset()
-    {
-
-    }
-
-    void loadInternal();
 
     bool prepareFrame();
 
-    void resetReadThread()
+    void unload()
     {
         if (read_thread) {
             read_thread->stop();
@@ -235,54 +138,52 @@ public:
         }
     }
 
+    void onloaded()
+    {
+        itf = frames.begin();
+    }
+
     bool enabled;
-    std::string fileName;
+    std::string file_name;
     std::string codec;
     double time_stamp;
-    SubtitleDecoder *decoder;
-    LoadAsync *load_async;
 
-    //std::list<SubtitleFrame> frames;
-    //std::list<SubtitleFrame>::iterator itf;
     SubtitleFrame current_frame;
 
     SubtitleReadThread *read_thread;
-    SubQueue frames;
+    SubtitleQueue frames;
+    SubtitleQueue::iterator itf;
+
+    ASSAide::ASSRender ass_render;
 };
-
-void SubtitlePrivate::loadInternal()
-{
-
-}
 
 bool SubtitlePrivate::prepareFrame()
 {
-    SubtitleFrame f;
-    if (current_frame.valid() && current_frame.end > time_stamp)
+    if (!read_thread || !(read_thread->mediaStatus() == Loaded))
+        return false;
+    if (time_stamp >= current_frame.start && time_stamp <= current_frame.end)
         return true;
-    while (frames.size() > 0) {
-        f = frames.front();
-        if (time_stamp < f.start) {
-            current_frame.reset();
-            return false;
+    current_frame.reset();
+    SubtitleQueue::iterator it = itf;
+    for (; it != frames.end(); ++it) {
+        if (time_stamp >= it->start) {
+            if (time_stamp <= it->end) {
+                current_frame = *it;
+                if (ass_render.initialized()) {
+                    ass_render.addSubtitleToTrack(current_frame.data());
+                }
+                itf = it;
+                return true;
+            }
+            else {
+                ++it;
+            }
         }
-        frames.dequeue();
-        if (time_stamp > f.start && time_stamp < f.end) {
+        else {
             break;
         }
-        f.reset();
     }
-    if (f.valid()) {
-        current_frame = f;
-        return true;
-    }
-    current_frame.reset();
     return false;
-}
-
-void LoadAsync::run()
-{
-    priv->loadInternal();
 }
 
 Subtitle::Subtitle():
@@ -310,13 +211,7 @@ void Subtitle::setEnabled(bool b)
 void Subtitle::setFile(const std::string &name)
 {
     DPTR_D(Subtitle);
-    d->fileName = name;
-    d->resetReadThread();
-    d->read_thread = new SubtitleReadThread;
-    d->read_thread->setFile(name);
-    d->read_thread->setBuffer(&d->frames);
-    d->read_thread->setDecoder(d->decoder);
-    d->read_thread->start();
+    d->file_name = name;
 }
 
 void Subtitle::setCodec(const std::string &codec)
@@ -328,59 +223,29 @@ void Subtitle::setCodec(const std::string &codec)
 void Subtitle::load()
 {
     DPTR_D(Subtitle);
-    if (d->load_async) {
-        d->load_async = new LoadAsync(d);
-    }
-    d->load_async->run();
+
+    d->unload();
+    d->read_thread = new SubtitleReadThread;
+    d->read_thread->setBuffer(&d->frames);
+    d->read_thread->setFile(d->file_name);
+    auto onload = [d]()->void {d->onloaded(); };
+    d->read_thread->setLoadedCallback(onload);
+    d->read_thread->start();
 }
 
-void Subtitle::seek(double pos, double incr, SeekType type)
-{
-    DPTR_D(Subtitle);
-    if (!d->read_thread) return;
-    d->read_thread->seek(pos, incr, type);
-}
-
-bool Subtitle::processHeader(MediaInfo *info)
-{
-    DPTR_D(Subtitle);
-    return d->decoder->processHeader(info);
-}
-
-bool Subtitle::processLine(Packet *pkt)
-{
-    DPTR_D(Subtitle);
-    SubtitleFrame f = d->decoder->processLine(pkt);
-    if (!f.valid())
-        return false;
-    d->frames.enqueue(f);
-    //if (d->frames.empty() || d->frames.back() < f) {
-    //    d->frames.push_back(f);
-    //    d->itf = d->frames.begin();
-    //    return true;
-    //}
-    //// usually add to the end. TODO: test
-    //std::list<SubtitleFrame>::iterator it = d->frames.end();
-    //if (it != d->frames.begin())
-    //    --it;
-    //while (it != d->frames.begin() && f < (*it)) { --it; }
-    //if (it != d->frames.begin()) // found in middle, insert before next
-    //    ++it;
-    //d->frames.insert(it, f);
-    //d->itf = it;
-    return true;
-}
-
-void Subtitle::setTimestamp(double t)
+void Subtitle::setTimestamp(double t, int w, int h)
 {
     DPTR_D(Subtitle);
     d->time_stamp = t;
+    if (!d->ass_render.initialized() && d->read_thread->subtitleDecoder()) {
+        d->ass_render.initialize(d->read_thread->subtitleDecoder()->codecCtx(), w, h);
+    }
     d->prepareFrame();
 }
 
-SubtitleFrame Subtitle::frame()
+SubtitleFrame* Subtitle::frame()
 {
-    return d_func()->current_frame;
+    return &d_func()->current_frame;
 }
 
 NAMESPACE_END

@@ -55,6 +55,7 @@ void VideoRenderer::receive(const VideoFrame &frame)
         CALL_BACK(sourceAspectRatioChanged, d->source_aspect_ratio);
 	setSourceSize(frame.width(), frame.height());
     d->current_frame = frame;
+    d->prepareExternalSubtitleFrame();
     update();
 #endif
 }
@@ -62,8 +63,6 @@ void VideoRenderer::receive(const VideoFrame &frame)
 void VideoRenderer::receiveSubtitle(SubtitleFrame & frame)
 {
     DPTR_D(VideoRenderer);
-    // parse subtitle use libass
-    d->parseAssSubtitle(frame);
     d->current_sub_frame = frame;
 }
 
@@ -211,6 +210,18 @@ void VideoRenderer::setupAspectRatio()
 		(GLfloat)d->out_rect.height() / (GLfloat)d->renderer_height, 1);
 	if (d->rotation())
 		d->matrix.rotate(d->rotation(), 0, 0, 1); // Z axis
+}
+
+void VideoRenderer::setInternalSubtitleEnabled(bool enabled)
+{
+    DPTR_D(VideoRenderer);
+    d->internal_subtitle_enabled = enabled;
+}
+
+void VideoRenderer::addSubtitle(Subtitle * subtitle)
+{
+    DPTR_D(VideoRenderer);
+    d->subtitles.push_back(subtitle);
 }
 
 void VideoRenderer::updateFilters(const std::list<Filter*> filters)

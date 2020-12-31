@@ -42,7 +42,8 @@ public:
         renderer(nullptr),
         assTrack(nullptr),
         width(0),
-        height(0)
+        height(0),
+        init_flag(false)
     {
 
     }
@@ -55,6 +56,8 @@ public:
         if (library)
             ass_library_done(library);
     }
+
+    bool initialized() { return init_flag; }
 
     int initialize(AVCodecContext* ctx, int w, int h)
     {
@@ -74,6 +77,7 @@ public:
         ass_set_frame_size(renderer, w, h);
         width = w;
         height = h;
+        init_flag = true;
         return 0;
     }
 
@@ -214,6 +218,7 @@ private:
     ASS_Track* assTrack;
     int width;
     int height;
+    bool init_flag;
 };
 }
 

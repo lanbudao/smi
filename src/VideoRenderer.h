@@ -8,6 +8,7 @@
 
 NAMESPACE_BEGIN
 class Filter;
+class Subtitle;
 class VideoRendererPrivate;
 class VideoRenderer: public AVOutput
 {
@@ -45,6 +46,9 @@ public:
 	void setOutAspectRatio(double ratio);
 
 	void setupAspectRatio();
+
+    void setInternalSubtitleEnabled(bool enabled);
+    void addSubtitle(Subtitle* subtitle);
 
     void updateFilters(const std::list<Filter*> filters);
     const std::list<Filter *> &filters() const;

@@ -5,6 +5,7 @@
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
 #include "sdk/filter/filter.h"
+#include "subtitle.h"
 #include "subtitle/subtitleframe.h"
 #include <cmath>
 
@@ -142,7 +143,8 @@ public:
 		source_aspect_ratio(1.0),
 		out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio),
 		out_aspect_ratio(0),
-		orientation(0)
+		orientation(0),
+        internal_subtitle_enabled(true)
     {
 		glv = new OpenglVideo();
         pixmap_render.initialize();
@@ -158,8 +160,7 @@ public:
 
     void applyVideoFilter();
     void applyRenderFilter();
-
-    void parseAssSubtitle(SubtitleFrame &frame);
+    void prepareExternalSubtitleFrame();
     void renderSubtitleFrame();
 
     void* opaque;
@@ -181,6 +182,8 @@ public:
 
     std::list<Filter*> filters;
 
+    std::list<Subtitle*> subtitles;
+    bool internal_subtitle_enabled;
     SubtitleFrame current_sub_frame;
     PixmapRender pixmap_render;
 };
@@ -255,22 +258,46 @@ inline void VideoRendererPrivate::applyRenderFilter()
     }
 }
 
-void VideoRendererPrivate::parseAssSubtitle(SubtitleFrame & frame)
+void VideoRendererPrivate::prepareExternalSubtitleFrame()
 {
-    //for (int i = 0; i < data->num_rects; ++i) {
-    //    // TODO
-
-    //}
+    std::list<Subtitle*>::iterator it = subtitles.begin();
+    for (it; it != subtitles.end(); ++it) {
+        Subtitle* subtitle = *it;
+        if (!subtitle || !subtitle->enabled())
+            continue;
+        /* prepare subtitle frame */
+        subtitle->setTimestamp(current_frame.timestamp(), current_frame.width(), current_frame.height());
+    }
 }
 
 void VideoRendererPrivate::renderSubtitleFrame()
 {
-    AVSubtitle *data = current_sub_frame.data();
-    double vpts = current_frame.timestamp();
-    if (vpts < current_sub_frame.start || vpts > current_sub_frame.end)
-        return;
-    if (data->num_rects > 0 && data->rects[0] && data->rects[0]->data[0]) {
-        pixmap_render.render(data->rects[0]->data[0], current_frame.width(), current_frame.height());
+    /* internal subtitle*/
+    if (internal_subtitle_enabled && current_sub_frame.valid()) {
+        AVSubtitle *data = current_sub_frame.data();
+        double vpts = current_frame.timestamp();
+        if (vpts < current_sub_frame.start || vpts > current_sub_frame.end)
+            return;
+        if (data->num_rects > 0 && data->rects[0] && data->rects[0]->data[0]) {
+            pixmap_render.render(data->rects[0]->data[0], current_frame.width(), current_frame.height());
+        }
+    }
+    /* external subtitles */
+    std::list<Subtitle*>::iterator it = subtitles.begin();
+    for (it; it != subtitles.end(); ++it) {
+        Subtitle* subtitle = *it;
+        if (!subtitle || !subtitle->enabled())
+            continue;
+        SubtitleFrame* frame = subtitle->frame();
+        if (frame->valid()) {
+            AVSubtitle *data = frame->data();
+            double vpts = current_frame.timestamp();
+            if (vpts < frame->start || vpts > frame->end)
+                continue;
+            if (data->num_rects > 0 && data->rects[0] && data->rects[0]->data[0]) {
+                pixmap_render.render(data->rects[0]->data[0], current_frame.width(), current_frame.height());
+            }
+        }
     }
 }
 

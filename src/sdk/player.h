@@ -116,7 +116,8 @@ public:
      *\brief Use 'setWantedStreamSpec' to swtich the track of internal subtitle, 
      * or 'addExternalSubtitle' to load external subtitle
      */
-    Subtitle* addExternalSubtitle(const std::string &fileName, bool enabled = true);
+    void setInternalSubtitleEnabled(bool enabled, VideoRenderer* r = nullptr);
+    Subtitle* addExternalSubtitle(const std::string &fileName, bool enabled = true, VideoRenderer* render = nullptr);
     void enableExternalSubtitle(Subtitle *sub);
     void removeExternalSubtitle(Subtitle *sub);
     std::list<Subtitle*> externalSubtitles();

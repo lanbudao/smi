@@ -317,13 +317,36 @@ void Player::enableExternalSubtitle(Subtitle *sub)
     }
 }
 
-Subtitle *Player::addExternalSubtitle(const string &url, bool enabled)
+void Player::setInternalSubtitleEnabled(bool enabled, VideoRenderer * r)
+{
+    DPTR_D(Player);
+
+    std::list<AVOutput*> outputs = d->video_output_set.outputs();
+    std::list<AVOutput *>::iterator itor;
+    for (itor = outputs.begin(); itor != outputs.end(); itor++) {
+        VideoRenderer *r = reinterpret_cast<VideoRenderer *>(*itor);
+        r->setInternalSubtitleEnabled(enabled);
+    }
+}
+
+Subtitle *Player::addExternalSubtitle(const string &url, bool enabled, VideoRenderer* render)
 {
     DPTR_D(Player);
     Subtitle *sub = new Subtitle;
     sub->setEnabled(enabled);
     sub->setFile(url);
     d->external_subtitles.push_back(sub);
+    sub->load();
+
+    /* add to video render */
+    std::list<AVOutput*> outputs = d->video_output_set.outputs();
+    std::list<AVOutput *>::iterator itor;
+    for (itor = outputs.begin(); itor != outputs.end(); itor++) {
+        VideoRenderer *r = reinterpret_cast<VideoRenderer *>(*itor);
+        if (r == render || render == nullptr) {
+            r->addSubtitle(sub);
+        }
+    }
     return sub;
 }
 

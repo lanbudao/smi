@@ -88,7 +88,10 @@ public:
                 }
                 continue;
             }
-            ass_render.addSubtitleToTrack(frame.data());
+            /* 0 = graphics */
+            if (frame.data()->format != 0) {
+                ass_render.addSubtitleToTrack(frame.data());
+            }
             frame.setSerial(serial);
             frames.enqueue(frame);
         }
@@ -347,9 +350,13 @@ void VideoThread::run()
 	VideoFrame* frame = &d->last_display_frame;
 
     // subtitle
-    SubtitleFrameQueue *subtitle_frames = &d->subtitle_decode_thread->frames;
-    d->subtitle_decode_thread->decoder = d->subtitle_decoder;
-    d->subtitle_decode_thread->start();
+    SubtitleFrameQueue *subtitle_frames = nullptr;
+    SubtitleFrame sub_frame;
+    if (d->subtitle_decode_thread) {
+        subtitle_frames = &d->subtitle_decode_thread->frames;
+        d->subtitle_decode_thread->decoder = d->subtitle_decoder;
+        d->subtitle_decode_thread->start();
+    }
 
     while (true) {
         if (d->stopped)
@@ -403,8 +410,7 @@ void VideoThread::run()
 			clock->updateClock(SyncToExternalClock, SyncToVideo);
         }
         // process subtitle
-        SubtitleFrame sub_frame;
-        if (d->subtitle_decode_thread) {
+        if (d->subtitle_decode_thread && subtitle_frames) {
             while (true) {
                 sub_frame = subtitle_frames->front(&valid, 10);
                 if (!valid) {

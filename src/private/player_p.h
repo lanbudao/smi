@@ -14,7 +14,7 @@
 #include "AVLog.h"
 #include "AVClock.h"
 #include "VideoRenderer.h"
-#include "subtitle/Subtitle.h"
+#include "subtitle.h"
 #include "filter/Filter.h"
 #include "subtitle/subtitledecoder.h"
 #include "inner.h"
@@ -80,7 +80,12 @@ public:
             delete demux_thread;
             demux_thread = nullptr;
         }
-//        audio_output_set.clearOutput();
+        std::list<Subtitle*>::iterator it = external_subtitles.begin();
+        for (; it != external_subtitles.end(); ++it) {
+            Subtitle* subtitle = *it;
+            if (subtitle) delete subtitle;
+        }
+        // audio_output_set.clearOutput();
         video_output_set.clearOutput();
     }
 
@@ -297,21 +302,18 @@ bool PlayerPrivate::setupVideoThread()
 		return false;
 	}
     // create subtitle decoder
-    for (size_t i = 0; i < subtitle_dec_ids.size(); ++i) {
-        SubtitleDecoder *dec = SubtitleDecoder::create(subtitle_dec_ids.at(i));
-        if (!dec)
-            continue;
+    if (demuxer->stream(MediaTypeSubtitle)) {
+        subtitle_dec = SubtitleDecoder::create(SubtitleDecoderId_FFmpeg);
         if (FFMPEG_MODULE_CHECK(LIBAVCODEC, 57, 26, 100)) {
             std::map < std::string, std::string > options;
             options.insert(std::make_pair("sub_text_format", "ass"));
-            dec->setCodeOptions(options);
+            subtitle_dec->setCodeOptions(options);
         }
-        dec->initialize(demuxer->formatCtx(), demuxer->stream(MediaTypeSubtitle));
-        if (dec->open()) {
-            subtitle_dec = dec;
-            break;
+        subtitle_dec->initialize(demuxer->formatCtx(), demuxer->stream(MediaTypeSubtitle));
+        if (!subtitle_dec->open()) {
+            delete subtitle_dec;
+            subtitle_dec = nullptr;
         }
-        delete dec;
     }
 	if (!video_thread) {
         video_thread = new VideoThread();

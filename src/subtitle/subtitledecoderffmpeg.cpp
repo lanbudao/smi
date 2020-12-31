@@ -1,14 +1,16 @@
 #include "SubtitleDecoder.h"
 #include "Demuxer.h"
-extern "C" {
-#include "libavformat/avformat.h"
-#include "libavcodec/avcodec.h"
-}
 #include "sdk/AVLog.h"
 #include "util/stringaide.h"
 #include "inner.h"
 #include "plaintext.h"
 #include "private/AVDecoder_p.h"
+#include "subtitle/subtitleframe.h"
+
+extern "C" {
+#include "libavformat/avformat.h"
+#include "libavcodec/avcodec.h"
+}
 
 NAMESPACE_BEGIN
 
