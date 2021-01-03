@@ -199,8 +199,6 @@ list(APPEND SOURCES
 	filter/Filter.cpp
 	filter/LibAVFilter.cpp
 	glad/src/glad.c
-	output/audio/AudioOutputPortAudio.cpp
-	output/audio/audiooutputdsound.cpp
 	renderer/ColorTransform.cpp
 	renderer/Geometry.cpp
 	renderer/GeometryRenderer.cpp
@@ -256,8 +254,9 @@ if (EXISTS ${LIBASS_DIR})
 	target_link_libraries(${MODULE} 
 		LINK_PRIVATE ass)
 endif()
-
+ 
 set_target_properties(${MODULE} PROPERTIES
         VERSION 1.0
         SOVERSION 1.0
-        OUTPUT_NAME smi)
+        OUTPUT_NAME smi
+		COMPILE_FLAGS "/wd4819 /wd4996")

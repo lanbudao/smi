@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
     });
     player->setBufferProcessCallback([window](float p) {
         char title[64];
-        sprintf(title, "Buffering: %d%%", FORCE_INT(p * 100));
+        sprintf_s(title, "Buffering: %d%%", FORCE_INT(p * 100));
         SDL_SetWindowTitle(window, title);
     });
     //player->setBufferPara(BufferTime, 3 * 1000);
@@ -106,15 +106,15 @@ int main(int argc, char *argv[])
             } else if (event.key.keysym.sym == SDLK_LEFT) {
                 player->seekBackward();
             } else if (event.key.keysym.sym == SDLK_DOWN) {
-                player->setSpeed(player->speed() - 0.1);
+                player->setSpeed(player->speed() - 0.1f);
             } else if (event.key.keysym.sym == SDLK_UP) {
-                player->setSpeed(player->speed() + 0.1);
+                player->setSpeed(player->speed() + 0.1f);
             } else if (event.key.keysym.sym == SDLK_F1) {
                 player->setMute(!player->isMute());
             } else if (event.key.keysym.sym == SDLK_F2) {
-                player->setVolume(player->volume() - 0.1);
+                player->setVolume(player->volume() - 0.1f);
             } else if (event.key.keysym.sym == SDLK_F3) {
-                player->setVolume(player->volume() + 0.1);
+                player->setVolume(player->volume() + 0.1f);
             }
         }
         else if (event.type == SDL_MOUSEBUTTONDOWN) {
@@ -123,15 +123,15 @@ int main(int argc, char *argv[])
                 if (event.button.button != SDL_BUTTON_RIGHT)
                     continue;
                 x = event.button.x;
-                int64_t ts; float frac;
-                int ns, hh, mm, ss;
-                int tns, thh, tmm, tss;
+                double ts; float frac;
+                int64_t ns, hh, mm, ss;
+                int64_t tns, thh, tmm, tss;
                 tns = player->duration();
                 thh = tns / 3600;
                 tmm = (tns % 3600) / 60;
                 tss = (tns % 60);
-                frac = x / w;
-                ns = frac * tns;
+                frac = FORCE_FLOAT(x / w);
+                ns = FORCE_INT64(frac * tns);
                 hh = ns / 3600;
                 mm = (ns % 3600) / 60;
                 ss = (ns % 60);

@@ -143,9 +143,9 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         //effective_tex_width_ratio =
         AVDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width, effective_tex_width[i], pad, bpp_gl);
         if (target == GL_TEXTURE_RECTANGLE)
-            v_texel_size[i] = Vector2D(1.0, 1.0);
+            v_texel_size[i] = Vector2D(1.0f, 1.0f);
         else
-            v_texel_size[i] = Vector2D(1.0/(float)texture_size[i].width, 1.0/(float)texture_size[i].height);
+            v_texel_size[i] = Vector2D(1.0f/(float)texture_size[i].width, 1.0f/(float)texture_size[i].height);
     }
     /*
      * there are 2 fragment shaders: rgb and yuv.
@@ -618,7 +618,7 @@ RectF VideoMaterial::mapToTexture(int plane, const RectF & roi, int normalize) c
 	float x = roi.x();
 	float w = roi.width(); //TODO: texturewidth
 	float y = roi.y();
-	float h = roi.height();
+	float h = (float)roi.height();
 	if (normalize) {
 		if (std::abs(x) > 1) {
 			x /= tex0W;

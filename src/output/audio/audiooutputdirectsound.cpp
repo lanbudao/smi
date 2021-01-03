@@ -226,8 +226,8 @@ bool AudioOutputDirectSound::isSupported(AudioFormat::SampleFormat sampleFormat)
 
 AudioOutputBackend::BufferControl AudioOutputDirectSound::bufferControl() const
 {
-    //return CountCallback;
-    return OffsetBytes;
+    return CountCallback;
+    //return OffsetBytes;
 }
 
 void AudioOutputDirectSound::acquireNextBuffer()
