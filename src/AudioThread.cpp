@@ -215,6 +215,7 @@ void AudioThread::run()
     d->decode_thread->start();
 
     while (true) {
+        bool has_ao = ao && ao->isAvailable();
         if (d->stopped)
             break;
         if (d->paused) {
@@ -227,7 +228,6 @@ void AudioThread::run()
 		if (frame.serial() != d->packets.serial()) {
 			continue;
 		}
-        bool has_ao = ao && ao->isAvailable();
         if (has_ao) {
             applyFilters(&frame);
             int wanted_samples = d->getWantedSamples(frame.samplePerChannel(), frame.format().sampleRate());

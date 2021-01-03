@@ -72,7 +72,7 @@ endif()
 
 IF (WIN32)
     list(APPEND EXTRA_DEFS -DSMI_HAVE_DSOUND=1)
-    list(APPEND SOURCES output/audio/AudioOutputdsound.cpp)
+    list(APPEND SOURCES output/audio/audiooutputdirectsound.cpp)
 ELSEIF (APPLE)
     MESSAGE(STATUS "Now is Apple systens.")
 ELSEIF (UNIX)
@@ -219,7 +219,8 @@ list(APPEND SOURCES
 	subtitle/subtitledecoder.cpp
 	subtitle/subtitledecoderffmpeg.cpp
 	util/CThread.cpp
-	util/logsink.cpp)
+	util/logsink.cpp
+    util/semaphore.cpp)
 	
 #if (EXISTS ${FREETYPE_DIR})
 #   list(APPEND EXTRA_DEFS -DSMI_HAVE_FREETYPE=1)

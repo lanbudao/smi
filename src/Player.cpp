@@ -68,9 +68,12 @@ void Player::prepare()
 void Player::pause(bool p)
 {
     DPTR_D(Player);
+    if (!d->loaded)
+        return;
     if (d->paused == p)
         return;
     d->paused = p;
+    if (d->ao) d->ao->pause(p);
     d->demux_thread->pause(p);
 	d->clock.pause(p);
 }

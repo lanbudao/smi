@@ -7,6 +7,9 @@ extern "C" {
 #include "libavutil/common.h"
 }
 
+#include <cassert>
+#include <vector>
+
 NAMESPACE_BEGIN
 
 // chunk
@@ -89,6 +92,84 @@ scale_samples_func get_scaler_func(AudioFormat::SampleFormat fmt, float vol, uin
     }
 }
 
+template<typename T, typename C>
+class ring_api {
+public:
+    ring_api() : m_0(0), m_1(0), m_s(0) {}
+    void push_back(const T &t);
+    void pop_front();
+    T &front() { return m_data[m_0]; }
+    const T &front() const { return m_data[m_0]; }
+    T &back() { return m_data[m_1]; }
+    const T &back() const { return m_data[m_1]; }
+    virtual size_t capacity() const = 0;
+    size_t size() const { return m_s; }
+    bool empty() const { return size() == 0; }
+    // need at() []?
+    const T &at(size_t i) const { assert(i < m_s); return m_data[index(m_0 + i)]; }
+    const T &operator[](size_t i) const { return at(i); }
+    T &operator[](size_t i) { assert(i < m_s); return m_data[index(m_0 + i)]; }
+protected:
+    size_t index(size_t i) const { return i < capacity() ? i : i - capacity(); } // i always [0,capacity())
+    size_t m_0, m_1;
+    size_t m_s;
+    C m_data;
+};
+
+template<typename T>
+class ring : public ring_api<T, std::vector<T> > {
+    using ring_api<T, std::vector<T> >::m_data; // why need this?
+public:
+    ring(size_t capacity = 16) : ring_api<T, std::vector<T> >() {
+        m_data.reserve(capacity);
+        m_data.resize(capacity);
+    }
+    size_t capacity() const { return m_data.size(); }
+};
+template<typename T, int N>
+class static_ring : public ring_api<T, T[N]> {
+    using ring_api<T, T[N]>::m_data; // why need this?
+public:
+    static_ring() : ring_api<T, T[N]>() {}
+    size_t capacity() const { return N; }
+};
+
+template<typename T, typename C>
+void ring_api<T, C>::push_back(const T &t) {
+    if (m_s == capacity()) {
+        m_data[m_0] = t;
+        m_0 = index(++m_0);
+        m_1 = index(++m_1);
+    }
+    else if (empty()) {
+        m_s = 1;
+        m_0 = m_1 = 0;
+        m_data[m_0] = t;
+    }
+    else {
+        m_data[index(m_0 + m_s)] = t;
+        ++m_1;
+        ++m_s;
+    }
+}
+
+template<typename T, typename C>
+void ring_api<T, C>::pop_front() {
+    assert(!empty());
+    if (empty())
+        return;
+    m_data[m_0] = T(); //erase the old data
+    m_0 = index(++m_0);
+    --m_s;
+}
+
+struct FrameInfo {
+    FrameInfo(int s = 0, double t = 0, int us = 0) : timestamp(t), duration(us), size(s) {}
+    double timestamp;
+    int duration; // in us
+    int size;
+};
+
 class AudioOutputPrivate: public AVOutputPrivate
 {
 public:
@@ -96,6 +177,7 @@ public:
         backend(nullptr),
         available(false),
         buffer_samples(kBufferSamples),
+        nb_buffers(kBufferCount),
         resample_type(ResampleBase),
         mute(false),
         support_mute(true),
@@ -103,9 +185,13 @@ public:
         volume_i(256),
         support_volume(true),
         buffers(kBufferCount),
-        features(0)
+        features(0),
+        play_pos(0),
+        processed_remain(0),
+        msecs_ahead(0),
+        paused(false)
     {
-
+        
     }
     ~AudioOutputPrivate()
     {
@@ -122,17 +208,36 @@ public:
         scale_samples = get_scaler_func(format.sampleFormat(), volume, &volume_i);
     }
 
+    void resetStatus() {
+        play_pos = 0;
+        processed_remain = 0;
+        msecs_ahead = 0;
+        frame_infos = ring<FrameInfo>(nb_buffers);
+    }
+
+    virtual void uwait(int64_t us) {
+        std::unique_lock<std::mutex> lock(mtx);
+        cond.wait_for(lock, std::chrono::microseconds((us + 500LL) / 1000LL));
+    }
+
     AudioFormat format;
     AudioFormat requested;
     std::vector<std::string> backendNames;
     AudioOutputBackend *backend;
     bool available;
     int buffer_samples;
+    int nb_buffers;
     ResampleType resample_type;
     bool mute, support_mute;
     float volume; uint16_t volume_i; bool support_volume;
     int buffers;
     int features;
+    int play_pos; // index or bytes
+    int processed_remain;
+    int msecs_ahead;
+    ring<FrameInfo> frame_infos;
+
+    bool paused;
     scale_samples_func scale_samples;
 };
 
@@ -157,7 +262,7 @@ AudioOutput::AudioOutput():
     AVOutput(new AudioOutputPrivate)
 {
     std::vector<std::string> backends = backendsAvailable();
-    for (int i = 0; i < backends.size(); ++i) {
+    for (unsigned i = 0; i < backends.size(); ++i) {
         AVDebug("audio output backend: ", backends.at(i));
     }
     setBackend(AudioOutputBackend::defaultPriority());
@@ -218,6 +323,8 @@ bool AudioOutput::close()
 bool AudioOutput::write(const char *data, int size, double pts)
 {
     DPTR_D(AudioOutput);
+    if (d->paused)
+        return false;
     if (!d->backend)
         return false;
     if (!receiveData(data, size, pts))
@@ -225,6 +332,17 @@ bool AudioOutput::write(const char *data, int size, double pts)
     //d->backend->write(data, size);
     d->backend->play();
     return true;
+}
+
+bool AudioOutput::pause(bool flag)
+{
+    DPTR_D(AudioOutput);
+    if (d->paused == flag)
+        return true;
+    d->paused = flag;
+    if (d->backend)
+        return d->backend->pause(flag);
+    return false;
 }
 
 AudioFormat AudioOutput::setAudioFormat(const AudioFormat &format)
@@ -323,6 +441,12 @@ int AudioOutput::bufferSize() const
     return d->buffer_samples * d->format.bytesPerSample();
 }
 
+int AudioOutput::bufferCount() const
+{
+    DPTR_D(const AudioOutput);
+    return d->nb_buffers;
+}
+
 int AudioOutput::bufferSamples() const
 {
     DPTR_D(const AudioOutput);
@@ -360,6 +484,8 @@ void AudioOutput::setMute(bool m)
 bool AudioOutput::receiveData(const char* data, int size, double pts)
 {
     DPTR_D(AudioOutput);
+    if (d->paused)
+        return false;
     ByteArray queue_data(data, size);
     if (isMute() && d->support_mute) {
         char s = 0;
@@ -381,6 +507,10 @@ bool AudioOutput::receiveData(const char* data, int size, double pts)
         //d->resetStatus();
         return false;
     }
+    // TODO: need check paused flag here? Now check flag in audiooutputdirectsound class
+    //if (d->paused)
+    //    return false;
+    d->frame_infos.push_back(FrameInfo(size, pts, d->format.durationForBytes(size)));
     return d->backend->write(queue_data.constData(), size);
 }
 
@@ -388,9 +518,13 @@ bool AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
 
-    const AudioOutputBackend::BufferControl f = d->backend->bufferControl();
+    if (d->frame_infos.empty())
+        return true;
+
     int remove = 0;
-    //const AudioOutputPrivate::FrameInfo &fi(d.frame_infos.front());
+    const AudioOutputBackend::BufferControl f = d->backend->bufferControl();
+    const FrameInfo &info = d->frame_infos.front();
+
     if (f & AudioOutputBackend::Blocking) {
         remove = 1;
     }
@@ -398,7 +532,57 @@ bool AudioOutput::waitForNextBuffer()
         d->backend->acquireNextBuffer();
         remove = 1;
     }
+    else if (f & AudioOutputBackend::OffsetBytes) { //TODO: similar to Callback+getWritableBytes()
+        int s = d->backend->getOffsetByBytes();
+        int processed = s - d->play_pos;
+        //qDebug("s: %d, play_pos: %d, processed: %d, bufferSizeTotal: %d", s, d.play_pos, processed, bufferSizeTotal());
+        if (processed < 0)
+            processed += bufferSize() * bufferCount();
+        d->play_pos = s;
+        const int next = info.size;
+        int writable_size = d->processed_remain + processed;
+        while ((writable_size < info.size) && next > 0) {
+            const int64_t us = d->format.durationForBytes(next - writable_size);
+            d->uwait(us);
+            s = d->backend->getOffsetByBytes();
+            processed += s - d->play_pos;
+            if (processed < 0)
+                processed += bufferSize() * bufferCount();
+            writable_size = d->processed_remain + processed;
+            d->play_pos = s;
+        }
+        d->processed_remain += processed;
+        d->processed_remain -= info.size; //ensure d.processed_remain later is greater
+        remove = -processed;
+    }
+    if (remove < 0) {
+        int next = info.size;
+        int free_bytes = -remove;
+        while (free_bytes >= next && next > 0) {
+            free_bytes -= next;
+            if (d->frame_infos.empty()) {
+                break;
+            }
+            d->frame_infos.pop_front();
+            next = d->frame_infos.front().size;
+        }
+        //qDebug("remove: %d, unremoved bytes < %d, writable_bytes: %d", remove, free_bytes, d.processed_remain);
+        return true;
+    }
+    //qDebug("remove count: %d", remove);
+    while (remove-- > 0) {
+        if (d->frame_infos.empty()) {
+            break;
+        }
+        d->frame_infos.pop_front();
+    }
     return true;
+}
+
+void AudioOutput::onCallback()
+{
+    DPTR_D(AudioOutput);
+    d->cond.notify_all();
 }
 
 NAMESPACE_END

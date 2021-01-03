@@ -18,7 +18,6 @@ NAMESPACE_BEGIN
 #endif //DX_LOG_COMPONENT
 #define DX_ENSURE(f, ...) DX_CHECK(f, return __VA_ARGS__;)
 #define DX_WARN(f) DX_CHECK(f)
-#define DX_ENSURE_OK(f, ...) DX_CHECK(f, return __VA_ARGS__;)
 #define DX_CHECK(f, ...) \
     do { \
         HRESULT hr = f; \
@@ -40,7 +39,7 @@ NAMESPACE_BEGIN
  * us an error if we use the const GUID in an enum */
 #undef DEFINE_GUID
 #define DEFINE_GUID(name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) EXTERN_C const GUID DECLSPEC_SELECTANY name = { l, w1, w2, { b1, b2, b3, b4, b5, b6, b7, b8 } }
-DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+    DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_DOLBY_AC3_SPDIF, WAVE_FORMAT_DOLBY_AC3_SPDIF, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_PCM, WAVE_FORMAT_PCM, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_UNKNOWN, 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
@@ -92,22 +91,23 @@ static int channelMaskToMS(int64_t av) {
 static int channelLayoutToMS(int64_t av) {
     return channelMaskToMS(av);
 }
-class AudioOutputDSoundPrivate: public AudioOutputBackendPrivate
+class AudioOutputDirectSoundPrivate : public AudioOutputBackendPrivate
 {
 public:
 
 };
-class AudioOutputDSound PU_NO_COPY: public AudioOutputBackend
+class AudioOutputDirectSound PU_NO_COPY : public AudioOutputBackend
 {
-    DPTR_DECLARE_PRIVATE(AudioOutputDSound)
+    DPTR_DECLARE_PRIVATE(AudioOutputDirectSound)
 public:
-    AudioOutputDSound();
-    ~AudioOutputDSound() PU_DECL_OVERRIDE;
+    AudioOutputDirectSound();
+    ~AudioOutputDirectSound() PU_DECL_OVERRIDE;
 
     bool initialize();
     bool uninitialize();
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
     BufferControl bufferControl() const;
+    void acquireNextBuffer();
     int getOffsetByBytes();
     bool loadDsound();
     bool unloadDsound();
@@ -117,6 +117,7 @@ public:
     bool close() PU_DECL_OVERRIDE;
     bool write(const char *data, int size) PU_DECL_OVERRIDE;
     bool play() PU_DECL_OVERRIDE;
+    bool pause(bool flag = true) override;
     bool avaliable() const { return d_func()->avaliable; }
     HANDLE notifyEvent() { return notify_event; }
     void onCallback();
@@ -135,11 +136,12 @@ private:
     HANDLE notify_event;
     Semaphore sem;
     std::atomic<int> buffers_free;
+    bool paused;
 
     class PositionWatcher : public CThread {
-        AudioOutputDSound *ao;
+        AudioOutputDirectSound *ao;
     public:
-        PositionWatcher(AudioOutputDSound* dsound) : ao(dsound) {}
+        PositionWatcher(AudioOutputDirectSound* dsound) : ao(dsound) {}
         void run() {
             DWORD dwResult = 0;
             while (ao->avaliable()) {
@@ -154,29 +156,30 @@ private:
     };
     PositionWatcher watcher;
 };
-typedef AudioOutputDSound AudioOutputBackendDsound;
-static const AudioOutputBackendId AudioOutputBackendId_Dsound = mkid::id32base36_6<'D', 's', 'o', 'u', 'n', 'd'>::value;
-FACTORY_REGISTER(AudioOutputBackend, Dsound, "Dsound")
+typedef AudioOutputDirectSound AudioOutputBackendDirectSound;
+static const AudioOutputBackendId AudioOutputBackendId_DirectSound = mkid::id32base36_6<'D', 'i', 'r', 'e', 'c', 't'>::value;
+FACTORY_REGISTER(AudioOutputBackend, DirectSound, "DirectSound")
 
-AudioOutputDSound::AudioOutputDSound():
-    AudioOutputBackend(new AudioOutputDSoundPrivate), 
+AudioOutputDirectSound::AudioOutputDirectSound() :
+    AudioOutputBackend(new AudioOutputDirectSoundPrivate),
     dsound(nullptr),
     prim_buf(nullptr),
     stream_buf(nullptr),
     notify(nullptr),
     notify_event(nullptr),
     write_offset(0),
-    watcher(this)
+    watcher(this),
+    paused(false)
 {
 
 }
 
-AudioOutputDSound::~AudioOutputDSound()
+AudioOutputDirectSound::~AudioOutputDirectSound()
 {
     watcher.wait();
 }
 
-bool AudioOutputDSound::initialize()
+bool AudioOutputDirectSound::initialize()
 {
     if (!loadDsound())
         return false;
@@ -189,23 +192,24 @@ bool AudioOutputDSound::initialize()
         unloadDsound();
         return false;
     }
-    DX_ENSURE_OK(dsound_create(NULL/*dev guid*/, &dsound, NULL), false);
-    /*  DSSCL_EXCLUSIVE: can modify the settings of the primary buffer, only the sound of this app will be hearable when it will have the focus.
+    DX_ENSURE(dsound_create(NULL/*dev guid*/, &dsound, NULL), false);
+    /*
+     * DSSCL_EXCLUSIVE: can modify the settings of the primary buffer,
+     * only the sound of this app will be hearable when it will have the focus.
      */
-    DX_ENSURE_OK(dsound->SetCooperativeLevel(GetDesktopWindow(), DSSCL_EXCLUSIVE), false);
+    DX_ENSURE(dsound->SetCooperativeLevel(GetDesktopWindow(), DSSCL_EXCLUSIVE), false);
     AVDebug("DirectSound initialized.\n");
     DSCAPS dscaps;
     memset(&dscaps, 0, sizeof(DSCAPS));
     dscaps.dwSize = sizeof(DSCAPS);
-    DX_ENSURE_OK(dsound->GetCaps(&dscaps), false);
+    DX_ENSURE(dsound->GetCaps(&dscaps), false);
     if (dscaps.dwFlags & DSCAPS_EMULDRIVER)
         AVDebug("DirectSound is emulated\n");
-
     write_offset = 0;
     return true;
 }
 
-bool AudioOutputDSound::uninitialize()
+bool AudioOutputDirectSound::uninitialize()
 {
     SAFE_RELEASE(notify);
     SAFE_RELEASE(prim_buf);
@@ -215,24 +219,35 @@ bool AudioOutputDSound::uninitialize()
     return true;
 }
 
-bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
+bool AudioOutputDirectSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
     return !IsPlanar(sampleFormat);
 }
 
-AudioOutputBackend::BufferControl AudioOutputDSound::bufferControl() const
+AudioOutputBackend::BufferControl AudioOutputDirectSound::bufferControl() const
 {
-    return CountCallback;
+    //return CountCallback;
+    return OffsetBytes;
 }
 
-int AudioOutputDSound::getOffsetByBytes()
+void AudioOutputDirectSound::acquireNextBuffer()
+{
+    //if (bufferControl() & CountCallback) {
+    //    sem.acquire();
+    //}
+    //else {
+
+    //}
+}
+
+int AudioOutputDirectSound::getOffsetByBytes()
 {
     DWORD read_offset = 0;
     stream_buf->GetCurrentPosition(&read_offset /*play*/, NULL /*write*/); //what's this write_offset?
     return (int)read_offset;
 }
 
-bool AudioOutputDSound::loadDsound()
+bool AudioOutputDirectSound::loadDsound()
 {
     dll = LoadLibrary(TEXT("dsound.dll"));
     if (!dll) {
@@ -241,7 +256,7 @@ bool AudioOutputDSound::loadDsound()
     }
     return true;
 }
-bool AudioOutputDSound::unloadDsound()
+bool AudioOutputDirectSound::unloadDsound()
 {
     if (dll)
         FreeLibrary(dll);
@@ -260,9 +275,9 @@ bool AudioOutputDSound::unloadDsound()
  * Once you create a secondary buffer, you cannot change its format anymore so
  * you have to release the current one and create another.
  */
-bool AudioOutputDSound::createBuffer()
+bool AudioOutputDirectSound::createBuffer()
 {
-    DPTR_D(AudioOutputDSound);
+    DPTR_D(AudioOutputDirectSound);
     WAVEFORMATEXTENSIBLE wformat;
     // TODO:  Dolby Digital AC3
     ZeroMemory(&wformat, sizeof(WAVEFORMATEXTENSIBLE));
@@ -292,7 +307,7 @@ bool AudioOutputDSound::createBuffer()
     if (true) {//format.channels() <= 2 && !format.isFloat()) { //openal use this, don't know why
         // fill in primary sound buffer descriptor
         DSBUFFERDESC dsbpridesc;
-        memset(&dsbpridesc, 0, sizeof(DSBUFFERDESC));
+        ZeroMemory(&dsbpridesc, sizeof(DSBUFFERDESC));
         dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
         dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
         // create primary buffer and set its format
@@ -318,7 +333,7 @@ bool AudioOutputDSound::createBuffer()
         if (dsbdesc.dwFlags & DSBCAPS_LOCHARDWARE) {
             // Try without DSBCAPS_LOCHARDWARE
             dsbdesc.dwFlags &= ~DSBCAPS_LOCHARDWARE;
-            DX_ENSURE_OK(dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL), (uninitialize() && false));
+            DX_ENSURE(dsound->CreateSoundBuffer(&dsbdesc, &stream_buf, NULL), (uninitialize() && false));
         }
     }
     AVDebug("Secondary (stream)buffer created\n");
@@ -334,13 +349,12 @@ bool AudioOutputDSound::createBuffer()
     //notification[buffer_count].hEventNotify = stop_notify_event;
     DX_ENSURE(notify->SetNotificationPositions(notification.size(), notification.data()), false);
     d->avaliable = true;
-
     watcher.start();
     sem.release(d->buffer_count - sem.available());
     return true;
 }
 
-bool AudioOutputDSound::open()
+bool AudioOutputDirectSound::open()
 {
     if (initialize() && createBuffer())
         return true;
@@ -349,9 +363,9 @@ bool AudioOutputDSound::open()
     return false;
 }
 
-bool AudioOutputDSound::close()
+bool AudioOutputDirectSound::close()
 {
-    DPTR_D(AudioOutputDSound);
+    DPTR_D(AudioOutputDirectSound);
     if (!d->avaliable)
         return true;
     d->avaliable = false;
@@ -361,24 +375,26 @@ bool AudioOutputDSound::close()
     return true;
 }
 
-bool AudioOutputDSound::write(const char *data, int size)
+bool AudioOutputDirectSound::write(const char *data, int size)
 {
-    DPTR_D(AudioOutputDSound);
+    DPTR_D(AudioOutputDirectSound);
+    if (paused)
+        return false;
     //AVDebug("sem %d %d\n", sem.available(), buffers_free.load());
     if (bufferControl() & CountCallback) {
         sem.acquire();
     }
-    //else {
-    //    if (buffers_free.load() <= d->buffer_count)
-    //        buffers_free.ref();
-    //}
+    else {
+        if (buffers_free.load() <= d->buffer_count)
+            buffers_free++;
+    }
     LPVOID dst1 = NULL, dst2 = NULL;
     DWORD size1 = 0, size2 = 0;
     if (write_offset >= d->buffer_size * d->buffer_count) ///!!!>=
         write_offset = 0;
     HRESULT res = stream_buf->Lock(write_offset, size, &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
-        AVDebug("dsound buffer lost\n");
+        AVDebug("Dsound Buffer Lost\n");
         DX_ENSURE(stream_buf->Restore(), false);
         DX_ENSURE(stream_buf->Lock(write_offset, size, &dst1, &size1, &dst2, &size2, 0), false);
     }
@@ -388,11 +404,11 @@ bool AudioOutputDSound::write(const char *data, int size)
     write_offset += size1 + size2;
     if (write_offset >= d->buffer_size * d->buffer_count)
         write_offset = size2;
-    DX_ENSURE_OK(stream_buf->Unlock(dst1, size1, dst2, size2), false);
+    DX_ENSURE(stream_buf->Unlock(dst1, size1, dst2, size2), false);
     return true;
 }
 
-bool AudioOutputDSound::play()
+bool AudioOutputDirectSound::play()
 {
     DWORD status;
     stream_buf->GetStatus(&status);
@@ -403,9 +419,33 @@ bool AudioOutputDSound::play()
     return true;
 }
 
-void AudioOutputDSound::onCallback()
+bool AudioOutputDirectSound::pause(bool flag)
 {
-    DPTR_D(AudioOutputDSound);
+    DWORD status;
+
+    paused = flag;
+    stream_buf->GetStatus(&status);
+    /* pause */
+    if (flag) {
+        if (status & DSBSTATUS_PLAYING) {
+            stream_buf->Stop();
+        }
+    }
+    /* continue */
+    else {
+        DWORD dwPlayCursor, dwWriteCursor;
+        stream_buf->GetCurrentPosition(&dwPlayCursor, &dwWriteCursor);
+        stream_buf->SetCurrentPosition(dwPlayCursor);
+        if (stream_buf->Play(0, 0, DSBPLAY_LOOPING) == DSERR_BUFFERLOST) {
+            AVWarning("Dsound Buffer Lost\n");
+        }
+    }
+    return true;
+}
+
+void AudioOutputDirectSound::onCallback()
+{
+    DPTR_D(AudioOutputDirectSound);
     if (bufferControl() & CountCallback) {
         //AvDebug("callback: %d\n", sem.available());
         if (sem.available() < d->buffer_count) {
@@ -415,19 +455,19 @@ void AudioOutputDSound::onCallback()
     }
 }
 
-float AudioOutputDSound::volume() const
+float AudioOutputDirectSound::volume() const
 {
     LONG vol = 0;
-    DX_ENSURE_OK(stream_buf->GetVolume(&vol), 1.0);
-    return pow(10.0, double(vol - DSBVOLUME_MIN) / 5000.0) / 100.0;
+    DX_ENSURE(stream_buf->GetVolume(&vol), 1.0);
+    return FORCE_FLOAT(pow(10.0, double(vol - DSBVOLUME_MIN) / 5000.0) / 100.0);
 }
 
-bool AudioOutputDSound::setVolume(float value)
+bool AudioOutputDirectSound::setVolume(float value)
 {
     // dsound supports [0, 1]
     const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
     // +DSBVOLUME_MIN == -100dB
-    DX_ENSURE_OK(stream_buf->SetVolume(vol), false);
+    DX_ENSURE(stream_buf->SetVolume(vol), false);
     return true;
 }
 

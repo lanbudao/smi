@@ -172,7 +172,6 @@ bool SubtitlePrivate::prepareFrame()
                 if (ass_render.initialized()) {
                     ass_render.addSubtitleToTrack(current_frame.data());
                 }
-                AVDebug() << current_frame.data()->rects[0]->ass << "\n";
                 itf = it;
                 return true;
             }

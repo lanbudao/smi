@@ -25,7 +25,7 @@ std::vector<std::string> AudioOutputBackend::defaultPriority()
     backends.push_back("PortAudio");
 #endif
 #ifdef SMI_HAVE_DSOUND
-    backends.push_back("Dsound");
+    backends.push_back("Directsound");
 #endif
 
     return backends;

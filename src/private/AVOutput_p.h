@@ -31,6 +31,7 @@ public:
     //Callback
     std::function<void(void* vo_opaque)> render_cb = nullptr;
     std::mutex mtx;
+    std::condition_variable cond;
 };
 
 NAMESPACE_END

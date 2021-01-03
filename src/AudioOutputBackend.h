@@ -24,6 +24,7 @@ public:
     virtual bool clear() {return false;}
     virtual bool write(const char *data, int size) = 0;
     virtual bool play() { return true; }
+    virtual bool pause(bool flag = true) { return true; }
     /**
      * @brief The BufferControl enum
      * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
@@ -47,6 +48,8 @@ public:
     void setBufferSize(int size);
     void setBufferCount(int count);
     virtual void acquireNextBuffer() {}
+
+    virtual int getOffsetByBytes() { return -1; }// OffsetBytes
 
     virtual bool isSupported(const AudioFormat& format) const { return isSupported(format.sampleFormat()) && isSupported(format.channelLayout());}
     // FIXME: workaround. planar convertion crash now!

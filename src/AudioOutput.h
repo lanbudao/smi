@@ -27,6 +27,7 @@ public:
     bool isOpen() const;
     bool close();
     bool write(const char *data, int size, double pts);
+    bool pause(bool flag = true);
 
     AudioFormat setAudioFormat(const AudioFormat& format);
     AudioFormat audioFormat() const;
@@ -35,6 +36,7 @@ public:
     void setBackend(const std::vector<std::string> &names);
 
     int bufferSize() const;
+    int bufferCount() const;
 
     int bufferSamples() const;
     void setBufferSamples(int value);
@@ -47,6 +49,7 @@ public:
 
     bool receiveData(const char* data, int size, double pts);
     bool waitForNextBuffer();
+    void onCallback();
 
 private:
 
