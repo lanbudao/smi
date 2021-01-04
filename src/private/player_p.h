@@ -337,17 +337,18 @@ bool PlayerPrivate::setupVideoThread()
 void PlayerPrivate::updateBufferValue(PacketQueue* buf)
 {
 	const bool is_video = video_thread && buf == video_thread->packets();
-	const double fps = std::max<double>(24.0, mediainfo.video->frame_rate.toDouble());
+	const double fps = mediainfo.video ? 
+        std::max<double>(24.0, mediainfo.video->frame_rate.toDouble()) : 24.0;
 	int64_t bv = 24;
 	if (buffer_mode == BufferTime)
 		bv = 1000LL; //ms
 	else if (buffer_mode == BufferBytes)
 		bv = 1024LL;
 	// do not block video packet if is music with cover
-	int64_t frames = mediainfo.video->frames;
 	if (is_video && mediainfo.video) {
-		if (demuxer->hasAttachedPic() || (frames > 0 && frames < bv))
-			bv = 0;
+        int64_t frames = mediainfo.video->frames;
+        if (demuxer->hasAttachedPic() || (frames > 0 && frames < bv))
+            bv = std::max(1LL, frames);
 	}
     buf->setRealTime(demuxer->isRealTime());
 	buf->setBufferMode((BufferMode)buffer_mode);

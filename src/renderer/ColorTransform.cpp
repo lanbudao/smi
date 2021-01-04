@@ -74,8 +74,8 @@ static Matrix4x4 ColorRangeYUV(ColorRange from, ColorRange to)
 {
     if (from == to)
         return Matrix4x4();
-    static const double Y2 = 235, Y1 = 16, C2 = 240, C1 = 16;
-    static const double s = 255; //TODO: can be others
+    static const float Y2 = 235, Y1 = 16, C2 = 240, C1 = 16;
+    static const float s = 255; //TODO: can be others
     if (from == ColorRange_Limited) { //TODO: Unknown. But what if realy want unknown?
         AVDebug("input yuv limited range\n");
         // [Y1, Y2] => [0, s]
@@ -100,8 +100,8 @@ static Matrix4x4 ColorRangeRGB(ColorRange from, ColorRange to)
 {
     if (from == to)
         return Matrix4x4();
-    static const double R2 = 235, R1 = 16;
-    static const double s = 255;
+    static const float R2 = 235, R1 = 16;
+    static const float s = 255;
     if (to == ColorRange_Limited) {
         AVDebug("output rgb limited range");
         Matrix4x4 m;
@@ -162,8 +162,8 @@ public:
                     0, 0, 1, b,
                     0, 0, 0, 1);
         // Contrast (offset) R,G,B
-        const float c = contrast+1.0;
-        const float t = (1.0 - c) / 2.0;
+        const float c = contrast + 1.0f;
+        const float t = (1.0f - c) / 2.0f;
         Matrix4x4 C(c, 0, 0, t,
                     0, c, 0, t,
                     0, 0, c, t,
@@ -181,7 +181,7 @@ public:
                     );
         // Hue
         const float n = 1.0f / sqrtf(3.0f);       // normalized hue rotation axis: sqrt(3)*(1 1 1)
-        const float h = hue * M_PI;               // hue rotation angle
+        const float h = static_cast<float>(hue * M_PI);               // hue rotation angle
         const float hc = cosf(h);
         const float hs = sinf(h);
         Matrix4x4 H(     // conversion of angle/axis representation to matrix representation
@@ -237,8 +237,8 @@ public:
     mutable bool recompute;
     ColorSpace cs_in, cs_out;
     ColorRange range_in, range_out;
-    double hue, saturation, contrast, brightness;
-    double bpc_scale;
+    float hue, saturation, contrast, brightness;
+    float bpc_scale;
     bool a_bpc_scale;
     mutable Matrix4x4 M; // count the transformations between spaces
 };
@@ -338,7 +338,7 @@ void ColorTransform::reset()
     d->reset();
 }
 
-void ColorTransform::setBrightness(double brightness)
+void ColorTransform::setBrightness(float brightness)
 {
     DPTR_D(ColorTransform);
     if (d->brightness == brightness)
@@ -354,7 +354,7 @@ double ColorTransform::brightness() const
 }
 
 // -1~1
-void ColorTransform::setHue(double hue)
+void ColorTransform::setHue(float hue)
 {
     DPTR_D(ColorTransform);
     if (d->hue == hue)
@@ -369,7 +369,7 @@ double ColorTransform::hue() const
     return d->hue;
 }
 
-void ColorTransform::setContrast(double contrast)
+void ColorTransform::setContrast(float contrast)
 {
     DPTR_D(ColorTransform);
     if (d->contrast == contrast)
@@ -384,7 +384,7 @@ double ColorTransform::contrast() const
     return d->contrast;
 }
 
-void ColorTransform::setSaturation(double saturation)
+void ColorTransform::setSaturation(float saturation)
 {
     DPTR_D(ColorTransform);
     if (d->saturation == saturation)
@@ -399,7 +399,7 @@ double ColorTransform::saturation() const
     return d->saturation;
 }
 
-void ColorTransform::setChannelDepthScale(double value, bool scaleAlpha)
+void ColorTransform::setChannelDepthScale(float value, bool scaleAlpha)
 {
     DPTR_D(ColorTransform);
     if (d->bpc_scale == value && d->a_bpc_scale == scaleAlpha)

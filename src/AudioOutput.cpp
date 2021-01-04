@@ -164,9 +164,9 @@ void ring_api<T, C>::pop_front() {
 }
 
 struct FrameInfo {
-    FrameInfo(int s = 0, double t = 0, int us = 0) : timestamp(t), duration(us), size(s) {}
+    FrameInfo(int s = 0, double t = 0, int64_t us = 0) : timestamp(t), duration(us), size(s) {}
     double timestamp;
-    int duration; // in us
+    int64_t duration; // in us
     int size;
 };
 
@@ -510,7 +510,7 @@ bool AudioOutput::receiveData(const char* data, int size, double pts)
     // TODO: need check paused flag here? Now check flag in audiooutputdirectsound class
     //if (d->paused)
     //    return false;
-    d->frame_infos.push_back(FrameInfo(size, pts, d->format.durationForBytes(size)));
+    d->frame_infos.push_back(FrameInfo(size, pts, d->format.durationForBytes(static_cast<int64_t>(size))));
     return d->backend->write(queue_data.constData(), size);
 }
 

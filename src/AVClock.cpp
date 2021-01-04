@@ -23,7 +23,7 @@ public:
         clock_type(SyncToAudio),
         max_frame_duration(0.0),
         paused(false),
-        speed(1.0),
+        speed(1.0f),
 		eof(true)
     {
 
@@ -40,7 +40,7 @@ public:
     double max_frame_duration;
     Clock clocks[SyncToNone];
     bool paused;
-    double speed;
+    float speed;
 	bool eof;
 };
 
@@ -86,7 +86,7 @@ float AVClock::speed() const
 void AVClock::setSpeed(float s)
 {
     DPTR_D(AVClock);
-    d->speed = av_clipf(s, 0.5, 2.0);
+    d->speed = av_clipf(s, 0.5, 12.0);
 }
 
 double AVClock::value() const
@@ -107,7 +107,7 @@ double AVClock::value(ClockType type) const
         return c->pts;
     } else {
         double time = av_gettime_relative() / 1000000.0;
-        return c->pts_drift + time - (time - c->last_updated) * (1.0 - d->speed);
+        return c->pts_drift + time - (time - c->last_updated) * (1.0f - d->speed);
     }
 }
 

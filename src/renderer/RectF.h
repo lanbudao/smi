@@ -56,7 +56,7 @@ inline double PointF::manhattanLength() const
 
 inline bool PointF::isNull() const
 {
-    return isNullF(xp) && isNullF(yp);
+    return std::abs(xp) <= 1e-15 && std::abs(yp) <= 1e-15;
 }
 
 inline double PointF::x() const

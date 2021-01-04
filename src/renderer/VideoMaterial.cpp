@@ -136,7 +136,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
 	}
     for (unsigned int i = 0; i < nb_planes; ++i) {
         const int bpp_gl = OpenglAide::bytesOfTexel(data_format[i], data_type[i]);
-        const int pad = std::ceil((double)(texture_size[i].width - effective_tex_width[i])/(double)bpp_gl);
+        const double pad = std::ceil((double)(texture_size[i].width - effective_tex_width[i])/(double)bpp_gl);
         texture_size[i].width = (std::ceil((double)texture_size[i].width / (double)bpp_gl));
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
         v_texture_size[i] = Vector2D(texture_size[i].width, texture_size[i].height);
@@ -558,7 +558,7 @@ double VideoMaterial::brightness() const
 	return d_func()->colorTransform.brightness();
 }
 
-void VideoMaterial::setBrightness(double value)
+void VideoMaterial::setBrightness(float value)
 {
 	d_func()->colorTransform.setBrightness(value);
 	d_func()->dirty = true;
@@ -569,7 +569,7 @@ double VideoMaterial::contrast() const
 	return d_func()->colorTransform.contrast();
 }
 
-void VideoMaterial::setContrast(double value)
+void VideoMaterial::setContrast(float value)
 {
 	d_func()->colorTransform.setContrast(value);
 	d_func()->dirty = true;
@@ -580,7 +580,7 @@ double VideoMaterial::hue() const
 	return d_func()->colorTransform.hue();
 }
 
-void VideoMaterial::setHue(double value)
+void VideoMaterial::setHue(float value)
 {
 	d_func()->colorTransform.setHue(value);
 	d_func()->dirty = true;
@@ -591,7 +591,7 @@ double VideoMaterial::saturation() const
 	return d_func()->colorTransform.saturation();
 }
 
-void VideoMaterial::setSaturation(double value)
+void VideoMaterial::setSaturation(float value)
 {
 	d_func()->colorTransform.setSaturation(value);
 	d_func()->dirty = true;
@@ -615,23 +615,23 @@ RectF VideoMaterial::mapToTexture(int plane, const RectF & roi, int normalize) c
 			return RectF(0, 0, d->effective_tex_width_ratio, 1); //NOTE: not (0, 0, 1, 1)
 		return RectF(0, 0, tex0W*pw, d->height * ph);
 	}
-	float x = roi.x();
-	float w = roi.width(); //TODO: texturewidth
-	float y = roi.y();
-	float h = (float)roi.height();
+	double x = roi.x();
+    double w = roi.width(); //TODO: texturewidth
+    double y = roi.y();
+    double h = roi.height();
 	if (normalize) {
 		if (std::abs(x) > 1) {
 			x /= tex0W;
 			x *= s;
 		}
 		if (std::abs(y) > 1)
-			y /= (float)d->height;
+			y /= (double)d->height;
 		if (std::abs(w) > 1) {
 			w /= tex0W;
 			w *= s;
 		}
 		if (std::abs(h) > 1)
-			h /= (float)d->height;
+			h /= (double)d->height;
 	}
 	else { //FIXME: what about ==1?
 		if (std::abs(x) <= 1)
@@ -639,13 +639,13 @@ RectF VideoMaterial::mapToTexture(int plane, const RectF & roi, int normalize) c
 		else
 			x *= s;
 		if (std::abs(y) <= 1)
-			y *= (float)d->height;
+			y *= (double)d->height;
 		if (std::abs(w) <= 1)
 			w *= tex0W;
 		else
 			w *= s;
 		if (std::abs(h) <= 1)
-			h *= (float)d->height;
+			h *= (double)d->height;
 	}
 	// multiply later because we compare with 1 before it
 	x *= d->effective_tex_width_ratio;

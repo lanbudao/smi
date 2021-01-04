@@ -66,13 +66,13 @@ public:
      */
     std::vector<Vector2D> textureSize() const;
 	double brightness() const;
-	void setBrightness(double value);
+	void setBrightness(float value);
 	double contrast() const;
-	void setContrast(double value);
+	void setContrast(float value);
 	double hue() const;
-	void setHue(double value);
+	void setHue(float value);
 	double saturation() const;
-	void setSaturation(double value);
+	void setSaturation(float value);
 
 	RectF mapToTexture(int plane, const RectF& r, int normalize = -1) const;
 

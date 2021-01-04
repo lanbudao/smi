@@ -132,11 +132,11 @@ bool AudioResampleFFmpeg::convert(const uchar **data)
     int64_t delay = swr_get_delay(d->context, std::max(in_sample_rate, out_sample_rate));
  
     //Use for "a*b/c"
-    d->out_samples_per_channel = av_rescale_rnd(
+    d->out_samples_per_channel = static_cast<int>(av_rescale_rnd(
         delay + (int64_t)d->in_samples_per_channel,
         out_sample_rate,
         (int64_t)in_sample_rate,
-        AV_ROUND_UP);
+        AV_ROUND_UP));
 #if 1
     d->data.reset();
     int64_t out_count = 0;

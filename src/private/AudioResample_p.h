@@ -22,7 +22,7 @@ public:
     {
     }
 
-    int64_t in_samples_per_channel, out_samples_per_channel;
+    int in_samples_per_channel, out_samples_per_channel;
     AudioFormat in_format, out_format;
     int wanted_nb_samples;
 

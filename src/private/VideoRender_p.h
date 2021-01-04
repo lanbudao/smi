@@ -216,7 +216,7 @@ bool VideoRendererPrivate::computeOutParameters(double outAspectRatio)
 		//renderer is too wide, use renderer's height, horizonal align center
 		const int h = renderer_height;
 		const int w = std::round(dar * double(h));
-		out_rect = RectF((renderer_width - w) / 2, 0, w, h);
+		out_rect = RectF((renderer_width - w) / 2.0, 0, w, h);
 	}
 	else if (rendererAspectRatio < dar) {
 		//renderer is too high, use renderer's width

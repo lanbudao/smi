@@ -293,7 +293,6 @@ int Demuxer::load()
 {
     DPTR_D(Demuxer);
     int ret = 0;
-    int i;
 
     unload();
 
@@ -544,7 +543,7 @@ void Demuxer::initMediaInfo()
             if (sd) {
                 double r = av_display_rotation_get((int32_t*)(sd));
                 if (!isnan(r))
-                    info.rotate = (FORCE_INT(r) + 360) % 360;
+                    info.rotate = FORCE_FLOAT((FORCE_INT64(r) + 360) % 360);
             }
 #endif
 			AVRational fr = av_guess_frame_rate(d->format_ctx, st, nullptr);

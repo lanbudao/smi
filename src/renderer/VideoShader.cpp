@@ -351,7 +351,7 @@ void VideoShader::initialize()
     d->u_textureSize = d->program->uniformLocation("u_textureSize");
     d->u_Texture.resize(textureLocationCount());
     AVDebug("uniform locations:\n");
-    for (int i = 0; i < d->u_Texture.size(); ++i) {
+    for (unsigned i = 0; i < d->u_Texture.size(); ++i) {
         std::string tex_var = "u_Texture" + std::to_string(i);
         d->u_Texture[i] = d->program->uniformLocation(tex_var.c_str());
         AVDebug("%s: %d\n", tex_var.c_str(), d->u_Texture[i]);

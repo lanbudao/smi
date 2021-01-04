@@ -7,7 +7,7 @@ class SMI_EXPORT SizeF
 {
 public:
 	SizeF() : width(0), height(0) {}
-	SizeF(float w, float h) { width = w; height = h; }
+	SizeF(double w, double h) { width = w; height = h; }
 
 	inline bool isNull() const { return width == 0 && height == 0; }
 	inline bool isValid() const { return width >= 0 && height >= 0; }
@@ -21,7 +21,7 @@ public:
 	inline void transpose() noexcept { std::swap(width, height); };
 	inline SizeF transposed() const noexcept { return SizeF(height, width); };
 
-	float width, height;
+	double width, height;
 };
 
 class SMI_EXPORT Size

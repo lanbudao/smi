@@ -78,19 +78,19 @@ public:
      */
     void reset();
     // -1~1
-    void setBrightness(double brightness);
+    void setBrightness(float brightness);
     double brightness() const;
     // -1~1
-    void setHue(double hue);
+    void setHue(float hue);
     double hue() const;
     // -1~1
-    void setContrast(double contrast);
+    void setContrast(float contrast);
     double contrast() const;
     // -1~1
-    void setSaturation(double saturation);
+    void setSaturation(float saturation);
     double saturation() const;
 
-    void setChannelDepthScale(double value, bool scaleAlpha = false);
+    void setChannelDepthScale(float value, bool scaleAlpha = false);
 
 private:
     DPTR_DECLARE(ColorTransform);

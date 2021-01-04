@@ -165,7 +165,10 @@ void Player::seek(double t, SeekType type)
         AVDebug("pts is nan, seek isn't finished.\n");
         return;
     }
-    if (d->clock.type() != SyncToVideo && isnan(d->clock.value(SyncToVideo))) {
+    if (d->clock.type() != SyncToVideo 
+        && isnan(d->clock.value(SyncToVideo))
+        && !d->demuxer->hasAttachedPic()) /* don't care video clock when audio has attached pic*/
+    {
         AVDebug("Video seek is not finished.\n");
         return;
     }

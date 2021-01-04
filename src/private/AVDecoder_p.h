@@ -107,7 +107,7 @@ public:
             f.setColorRange(ColorRange_Full);
             return;
         }
-        uint8_t flags = av_pix_fmt_desc_get((AVPixelFormat)f.pixelFormatFFmpeg())->flags;
+        uint64_t flags = av_pix_fmt_desc_get((AVPixelFormat)f.pixelFormatFFmpeg())->flags;
         bool isRgbCoded = ((flags & AV_PIX_FMT_FLAG_RGB) == AV_PIX_FMT_FLAG_RGB);
         if (isRgbCoded) {
             if (f.width() >= 1280 && f.height() >= 576) {
@@ -162,9 +162,9 @@ public:
             dar = static_cast<float>(f->width) / static_cast<float>(f->height);
         // prefer sar from AVFrame if sar != 1/1
         if (f->sample_aspect_ratio.num > 1)
-            dar *= av_q2d(f->sample_aspect_ratio);
+            dar *= static_cast<float>(av_q2d(f->sample_aspect_ratio));
         else if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) // skip 1/1
-            dar *= av_q2d(codec_ctx->sample_aspect_ratio);
+            dar *= static_cast<float>(av_q2d(codec_ctx->sample_aspect_ratio));
         return dar;
     }
 
