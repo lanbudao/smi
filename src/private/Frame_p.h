@@ -36,7 +36,8 @@ public:
     std::vector<int> line_sizes; //stride
     std::map<std::string, std::string> metadata;
     ByteArray data;
-    double timestamp, pos;
+    double timestamp;
+    int64_t pos;
     AVFrame* frame;
     int serial;
 };

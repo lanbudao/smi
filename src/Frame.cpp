@@ -138,13 +138,13 @@ void Frame::setTimestamp(double t) {
     d->timestamp = t;
 }
 
-double Frame::pos() const
+int64_t Frame::pos() const
 {
     DPTR_D(const Frame);
     return d->pos;
 }
 
-void Frame::setPos(double p)
+void Frame::setPos(int64_t p)
 {
     DPTR_D(Frame);
     d->pos = p;

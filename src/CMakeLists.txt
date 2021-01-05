@@ -259,4 +259,4 @@ set_target_properties(${MODULE} PROPERTIES
         VERSION 1.0
         SOVERSION 1.0
         OUTPUT_NAME smi
-		COMPILE_FLAGS "/wd4819 /wd4996")
+		COMPILE_FLAGS "/wd4819 /wd4996 /wd4018")

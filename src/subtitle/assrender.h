@@ -94,7 +94,7 @@ public:
 #ifdef SMI_HAVE_LIBASS
         const int64_t start_time = av_rescale_q(subtitle->pts, { 1,AV_TIME_BASE }, { 1,1000 });
         const int64_t duration = subtitle->end_display_time + 1000;
-        for (int i = 0; i < subtitle->num_rects; i++)
+        for (unsigned i = 0; i < subtitle->num_rects; i++)
         {
             char *ass_line = subtitle->rects[i]->ass;
             if (ass_line)

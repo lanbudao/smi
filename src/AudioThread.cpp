@@ -247,6 +247,7 @@ void AudioThread::run()
         decodedPos = 0;
         const double byte_rate = frame.format().bytesPerSecond();
         double pts = frame.timestamp();
+        int buffer_size = ao ? ao->bufferSize() : 512 * 16;
         clock->updateValue(SyncToAudio, pts, frame.serial());
         //AVDebug("audio frame pts: %.3f\n", frame.timestamp());
         while (decodedSize > 0) {
@@ -265,7 +266,7 @@ void AudioThread::run()
                 continue;
             }
             // Write buffersize at most
-            const int chunk = std::min(decodedSize, ao->bufferSize());
+            const int chunk = std::min(decodedSize, buffer_size);
             const double chunk_delay = (double)chunk / byte_rate;
             if (has_ao && ao->isOpen()) {
                 char *decodedChunk = (char *)malloc(chunk);
@@ -276,30 +277,17 @@ void AudioThread::run()
 				ao->write(decodedChunk, chunk, pts);
 				clock->updateValue(SyncToAudio, pts, frame.serial());
                 clock->updateClock(SyncToExternalClock, SyncToAudio);
-                //AVDebug("audio frame pts: %.3f\n", pts);
                 d->output->unlock();
-//                if (!is_external_clock && ao->timestamp() > 0) {//TODO: clear ao buffer
-//                    d.clock->updateValue(ao->timestamp());
-//                }
                 free(decodedChunk);
             } else {
-//                d.clock->updateDelay(delay += chunk_delay);
-                /*
-                 * why need this even if we add delay? and usleep sounds weird
-                 * the advantage is if no audio device, the play speed is ok too
-                 * So is portaudio blocking the thread when playing?
-                 */
-                //TODO: avoid acummulative error. External clock?
-                //msleep((unsigned long)(chunk_delay * 1000.0));
 				d->waitForRefreshMs((unsigned long)(chunk_delay * 1000.0));
             }
             decodedPos += chunk;
             decodedSize -= chunk;
             pts += chunk_delay;
-            pkt.pts += chunk_delay; // packet not fully decoded, use new pts in the next decoding
+            pkt.pts += chunk_delay;
             pkt.dts += chunk_delay;
         }
-		//int a = 0;
     }
     d->packets.clear();
     CThread::run();

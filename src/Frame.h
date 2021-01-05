@@ -68,8 +68,8 @@ public:
 
     double timestamp() const;
     void setTimestamp(double t);
-    double pos() const;
-    void setPos(double pos);
+    int64_t pos() const;
+    void setPos(int64_t pos);
 	void setMetaData(const std::string &key, const std::string &value);
 
     AVFrame* frame();
