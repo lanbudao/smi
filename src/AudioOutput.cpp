@@ -213,6 +213,7 @@ public:
         processed_remain = 0;
         msecs_ahead = 0;
         frame_infos = ring<FrameInfo>(nb_buffers);
+        cond.notify_all();
     }
 
     virtual void uwait(int64_t us) {
