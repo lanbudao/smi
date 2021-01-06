@@ -13,8 +13,8 @@ extern "C" {
 NAMESPACE_BEGIN
 
 // chunk
-static const int kBufferSamples = 512;
-static const int kBufferCount = 8 * 2; // may wait too long at the beginning (oal) if too large. if buffer count is too small, can not play for high sample rate audio.
+static const int kBufferSamples = 4096;
+static const int kBufferCount = 8; // may wait too long at the beginning (oal) if too large. if buffer count is too small, can not play for high sample rate audio.
 
 typedef void(*scale_samples_func)(uint8_t *dst, const uint8_t *src, int nb_samples, int volume, float volumef);
 
@@ -295,6 +295,7 @@ bool AudioOutput::open()
     d->backend->setFormat(d->format);
     d->backend->setBufferSize(bufferSize());
     d->backend->setBufferCount(d->buffers);
+    d->resetStatus();
     if (!d->backend->open())
         return false;
     d->available = true;
@@ -310,6 +311,7 @@ bool AudioOutput::isOpen() const
 bool AudioOutput::close()
 {
     DPTR_D(AudioOutput);
+    d->resetStatus();
 	if (!d->available)
 		return true;
     if (!d->backend)

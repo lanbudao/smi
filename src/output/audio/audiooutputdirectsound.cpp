@@ -39,7 +39,8 @@ NAMESPACE_BEGIN
  * us an error if we use the const GUID in an enum */
 #undef DEFINE_GUID
 #define DEFINE_GUID(name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) EXTERN_C const GUID DECLSPEC_SELECTANY name = { l, w1, w2, { b1, b2, b3, b4, b5, b6, b7, b8 } }
-    DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+
+DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, WAVE_FORMAT_IEEE_FLOAT, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_DOLBY_AC3_SPDIF, WAVE_FORMAT_DOLBY_AC3_SPDIF, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_PCM, WAVE_FORMAT_PCM, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 DEFINE_GUID(_KSDATAFORMAT_SUBTYPE_UNKNOWN, 0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
@@ -212,7 +213,7 @@ bool AudioOutputDirectSound::initialize()
 bool AudioOutputDirectSound::uninitialize()
 {
     SAFE_RELEASE(notify);
-    SAFE_RELEASE(prim_buf);
+    //SAFE_RELEASE(prim_buf);
     SAFE_RELEASE(stream_buf);
     SAFE_RELEASE(dsound);
     unloadDsound();
@@ -226,8 +227,8 @@ bool AudioOutputDirectSound::isSupported(AudioFormat::SampleFormat sampleFormat)
 
 AudioOutputBackend::BufferControl AudioOutputDirectSound::bufferControl() const
 {
-    return CountCallback;
-    //return OffsetBytes;
+    //return CountCallback;
+    return OffsetBytes;
 }
 
 void AudioOutputDirectSound::acquireNextBuffer()
@@ -298,23 +299,14 @@ bool AudioOutputDirectSound::createBuffer()
     if (d->format.isFloat()) {
         wf.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
         wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_IEEE_FLOAT;
+        wformat.Samples.wValidBitsPerSample = wf.wBitsPerSample;
     }
     else {
         wf.wFormatTag = WAVE_FORMAT_PCM;
         wformat.SubFormat = _KSDATAFORMAT_SUBTYPE_PCM;
     }
     wformat.Format = wf;
-    if (true) {//format.channels() <= 2 && !format.isFloat()) { //openal use this, don't know why
-        // fill in primary sound buffer descriptor
-        DSBUFFERDESC dsbpridesc;
-        ZeroMemory(&dsbpridesc, sizeof(DSBUFFERDESC));
-        dsbpridesc.dwSize = sizeof(DSBUFFERDESC);
-        dsbpridesc.dwFlags = DSBCAPS_PRIMARYBUFFER;
-        // create primary buffer and set its format
-        DX_ENSURE(dsound->CreateSoundBuffer(&dsbpridesc, &prim_buf, NULL), (uninitialize() && false));
-        DX_ENSURE(prim_buf->SetFormat((WAVEFORMATEX *)&wformat), false);
-    }
-    // fill in the secondary sound buffer (=stream buffer) descriptor
+
     DSBUFFERDESC dsbdesc;
     memset(&dsbdesc, 0, sizeof(DSBUFFERDESC));
     dsbdesc.dwSize = sizeof(DSBUFFERDESC);
@@ -342,7 +334,7 @@ bool AudioOutputDirectSound::createBuffer()
     notify_event = CreateEvent(NULL, FALSE, FALSE, NULL);
     std::vector<DSBPOSITIONNOTIFY> notification(d->buffer_count);
     for (int i = 0; i < d->buffer_count; ++i) {
-        notification[i].dwOffset = d->buffer_size * (i + 1) - 1;
+        notification[i].dwOffset = d->buffer_size * i;
         notification[i].hEventNotify = notify_event;
     }
     //notification[buffer_count].dwOffset = DSBPN_OFFSETSTOP;
@@ -380,7 +372,6 @@ bool AudioOutputDirectSound::write(const char *data, int size)
     DPTR_D(AudioOutputDirectSound);
     if (paused)
         return false;
-    //AVDebug("sem %d %d\n", sem.available(), buffers_free.load());
     if (bufferControl() & CountCallback) {
         sem.acquire();
     }
@@ -388,23 +379,23 @@ bool AudioOutputDirectSound::write(const char *data, int size)
         if (buffers_free.load() <= d->buffer_count)
             buffers_free++;
     }
-    LPVOID dst1 = NULL, dst2 = NULL;
+    LPVOID buffer1 = NULL, buffer2 = NULL;
     DWORD size1 = 0, size2 = 0;
-    if (write_offset >= d->buffer_size * d->buffer_count) ///!!!>=
-        write_offset = 0;
-    HRESULT res = stream_buf->Lock(write_offset, size, &dst1, &size1, &dst2, &size2, 0); //DSBLOCK_ENTIREBUFFER
+    HRESULT res = stream_buf->Lock(write_offset, size, &buffer1, &size1, &buffer2, &size2, 0); //DSBLOCK_ENTIREBUFFER
     if (res == DSERR_BUFFERLOST) {
         AVDebug("Dsound Buffer Lost\n");
         DX_ENSURE(stream_buf->Restore(), false);
-        DX_ENSURE(stream_buf->Lock(write_offset, size, &dst1, &size1, &dst2, &size2, 0), false);
+        DX_ENSURE(stream_buf->Lock(write_offset, size, &buffer1, &size1, &buffer2, &size2, 0), false);
     }
-    memcpy(dst1, data, size1);
-    if (dst2)
-        memcpy(dst2, data + size1, size2);
-    write_offset += size1 + size2;
-    if (write_offset >= d->buffer_size * d->buffer_count)
-        write_offset = size2;
-    DX_ENSURE(stream_buf->Unlock(dst1, size1, dst2, size2), false);
+    if (!SUCCEEDED(res))
+        return false;
+    CopyMemory(buffer1, data, size1);
+    write_offset += size1;
+    if (buffer2)
+        CopyMemory(buffer2, data + size1, size2);
+    write_offset += size2;
+    write_offset %= (d->buffer_size * d->buffer_count);
+    DX_ENSURE(stream_buf->Unlock(buffer1, size1, buffer2, size2), false);
     return true;
 }
 
