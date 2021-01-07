@@ -228,6 +228,13 @@ void PlayerPrivate::playInternal()
 	clock.init(SyncToExternalClock, clock.serialAddr(SyncToExternalClock));
     clock.setClockType(clock_type);
 	clock.setEof(false);
+    auto fun = [this](MediaStatus s)->void {
+        CALL_BACK(mediaStatusChanged, s);
+        if (ao) {
+            ao->pause(s == Buffering || paused);
+        }
+    };
+    demux_thread->setMediaStatusChangedCB(fun);
     demux_thread->start();
 }
 

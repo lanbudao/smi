@@ -204,10 +204,10 @@ void AVDemuxThread::updateBufferStatus()
     DPTR_D(AVDemuxThread);
     if (!d->main_buffer || !d->demuxer->isRealTime())
         return;
-    if (d->buffering && d->bufferProcessChanged) {
+    if (d->buffering) {
         float progress = d->main_buffer->bufferProgress();
         if (progress - d->lastProgress > 0.01) {
-            d->bufferProcessChanged(progress);
+            CALL_BACK(d->bufferProcessChanged, progress);
             d->lastProgress = progress;
         }
     }
@@ -215,9 +215,7 @@ void AVDemuxThread::updateBufferStatus()
         return;
     d->buffering = d->main_buffer->isBuffering();
     d->lastProgress = 0;
-    if (d->mediaStatusChanged) {
-        d->mediaStatusChanged(d->buffering ? Buffering : Buffered);
-    }
+    CALL_BACK(d->mediaStatusChanged, d->buffering ? Buffering : Buffered);
 }
 
 void AVDemuxThread::setMediaStatusChangedCB(std::function<void(MediaStatus s)> f)

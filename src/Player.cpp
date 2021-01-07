@@ -424,13 +424,6 @@ void Player::setMediaStatusCallback(std::function<void (MediaStatus)> f)
 {
     DPTR_D(Player);
     d->mediaStatusChanged = f;
-    auto fun = [this, d](MediaStatus s)->void {
-        CALL_BACK(d->mediaStatusChanged, s);
-        if (d->ao) {
-            d->ao->pause(s == Buffering || d->paused);
-        }
-    };
-    d->demux_thread->setMediaStatusChangedCB(fun);
 }
 
 void Player::setStreamChangedCallback(std::function<void(MediaType type, int stream)> f)
