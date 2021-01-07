@@ -26,10 +26,11 @@ NAMESPACE_BEGIN
 class InterruptHandler
 {
 public:
-    InterruptHandler(Demuxer *demuxer):
-        mCurAction(None),
+    InterruptHandler(Demuxer *d):
+        curAction(None),
         interruptCB(new AVIOInterruptCB()),
-        mDemuxer(demuxer)
+        demuxer(d),
+        status(0)
     {
         interruptCB->callback = handleInterrupt;
         interruptCB->opaque = this;
@@ -46,7 +47,7 @@ public:
         delete interruptCB;
     }
     AVIOInterruptCB *handler() {return interruptCB;}
-    Action action() const {return mCurAction;}
+    Action action() const {return curAction;}
     void begin(Action action)
     {
 
@@ -56,13 +57,17 @@ public:
 
     }
 	void setStatus(int s) { status = s; };
-    void setInterruptTimeout(int64_t timeout) { mTimeout = timeout;}
+    void setInterruptTimeout(int64_t t) { timeout = t;}
 
     static int handleInterrupt(void *obj)
     {
         InterruptHandler *handler = static_cast<InterruptHandler *>(obj);
         if (!handler)
             return 0;
+        if (handler->status < 0) {
+            AVWarning("Interrupt by user!\n");
+            return 1;
+        }
         switch (handler->action()) {
             case OpenStream:
                 break;
@@ -73,15 +78,15 @@ public:
             default:
                 break;
         }
-        return 1;
+        return 0;
     }
 
 private:
 	int status;
-    int64_t mTimeout;
-    Action mCurAction;
+    int64_t timeout;
+    Action curAction;
     AVIOInterruptCB *interruptCB;
-    Demuxer *mDemuxer;
+    Demuxer *demuxer;
 };
 
 class DemuxerPrivate
@@ -101,7 +106,7 @@ public:
         format_ctx(nullptr),
         input_format(nullptr),
         format_opts(nullptr),
-        interruptHandler(nullptr),
+        interrupt_handler(nullptr),
         show_status(false),
 		seek_pos(0)
     {
@@ -160,7 +165,7 @@ public:
     AVInputFormat *input_format;
     AVDictionary *format_opts;
     std::hash<std::string> format_dict;
-    InterruptHandler *interruptHandler;
+    InterruptHandler *interrupt_handler;
     int temp;
 	std::mutex mutex;
     bool show_status;
@@ -243,12 +248,13 @@ Demuxer::Demuxer():
     d_ptr(new DemuxerPrivate)
 {
     DPTR_D(Demuxer);
-    d->interruptHandler = new InterruptHandler(this);
+    d->interrupt_handler = new InterruptHandler(this);
 }
 
 Demuxer::~Demuxer()
 {
-
+    DPTR_D(Demuxer);
+    delete d->interrupt_handler;
 }
 
 void Demuxer::setMedia(const std::string& url)
@@ -297,13 +303,16 @@ int Demuxer::load()
     unload();
 
     d->format_ctx = avformat_alloc_context();
-//    d->format_ctx->interrupt_callback = *(d->interruptHandler->handler());
+    d->format_ctx->interrupt_callback = *(d->interrupt_handler->handler());
     if (!d->format_ctx) {
         AVError("Could not allocate context.\n");
         return AVERROR(ENOMEM);
     }
 
-    if (avformat_open_input(&d->format_ctx, d->url.c_str(), d->input_format, &d->format_opts) != 0) {
+    d->interrupt_handler->begin(InterruptHandler::OpenStream);
+    ret = avformat_open_input(&d->format_ctx, d->url.c_str(), d->input_format, &d->format_opts);
+    d->interrupt_handler->end();
+    if (ret < 0) {
         avformat_close_input(&d->format_ctx);
         return AVERROR(ENFILE);
     }
@@ -311,7 +320,9 @@ int Demuxer::load()
         d->format_ctx->flags |= AVFMT_FLAG_GENPTS;
 
     av_format_inject_global_side_data(d->format_ctx);
+    d->interrupt_handler->begin(InterruptHandler::FindStream);
     ret = avformat_find_stream_info(d->format_ctx, nullptr);
+    d->interrupt_handler->end();
     if (ret != 0) {
 		AVError("Could not find stream in this media.\n");
         return ret;
@@ -334,6 +345,13 @@ int Demuxer::load()
     return 0;
 }
 
+void Demuxer::abort()
+{
+    DPTR_D(Demuxer);
+    if (d->interrupt_handler)
+        d->interrupt_handler->setStatus(-1);
+}
+
 void Demuxer::unload()
 {
     DPTR_D(Demuxer);
@@ -342,6 +360,7 @@ void Demuxer::unload()
         avformat_close_input(&d->format_ctx);
         d->format_ctx = nullptr;
     }
+    d->interrupt_handler->setStatus(0);
 }
 
 bool Demuxer::isLoaded()
@@ -430,7 +449,7 @@ void Demuxer::setSeekType(SeekType type)
 void Demuxer::setInterruptStatus(int interrupt)
 {
 	DPTR_D(Demuxer);
-	d->interruptHandler->setStatus(interrupt);
+	d->interrupt_handler->setStatus(interrupt);
 }
 
 int Demuxer::readFrame()
@@ -441,9 +460,9 @@ int Demuxer::readFrame()
     int ret = -1;
     AVPacket *avpkt = d->avpkt;
 
-    d->interruptHandler->begin(InterruptHandler::ReadStream);
+    d->interrupt_handler->begin(InterruptHandler::ReadStream);
     ret = av_read_frame(d->format_ctx, avpkt);
-    d->interruptHandler->end();
+    d->interrupt_handler->end();
 
     if (ret < 0) {
         if (ret == AVERROR_EOF)

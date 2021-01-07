@@ -37,7 +37,13 @@ public:
     void setMediaStreamDisable(MediaType type);
 
     void prepare();
+    /**
+     * \brief prepare media asynchronously. 
+     * It's usefull when load real-time streaming, such as rsp, rtsp, sdp...
+     */
+    void prepareAsync();
 
+    MediaStatus mediaStatus();
     void pause(bool p = true);
     bool isPaused() const;
     void stop();

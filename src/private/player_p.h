@@ -21,6 +21,25 @@
 
 NAMESPACE_BEGIN
 
+class PlayerPrivate;
+class LoadMediaAsync : public CThread {
+public:
+    LoadMediaAsync(Player *p, PlayerPrivate *pri) :
+        player(p),
+        d(pri)
+    {
+    }
+    ~LoadMediaAsync()
+    {
+    }
+
+    void stop();
+    void run();
+
+    Player* player;
+    PlayerPrivate* d;
+};
+
 class PlayerPrivate
 {
 public:
@@ -30,6 +49,8 @@ public:
         seeking(false),
         buffer_mode(BufferPackets),
         buffer_value(-1),
+        media_status(NoMedia),
+        load_media_async(nullptr),
         demuxer(nullptr),
         demux_thread(nullptr),
         video_thread(nullptr),
@@ -53,6 +74,11 @@ public:
 
     ~PlayerPrivate()
     {
+        media_status = NoMedia;
+        if (load_media_async) {
+            delete load_media_async;
+            load_media_async = nullptr;
+        }
         if (ao) {
             if (ao->isOpen())
                 ao->close();
@@ -118,6 +144,10 @@ public:
 	uint8_t buffer_mode;
 	int64_t buffer_value;
 
+    MediaStatus media_status;
+    /*async load*/
+    LoadMediaAsync* load_media_async;
+
     /*Demuxer*/
     Demuxer *demuxer;
     AVDemuxThread *demux_thread;
@@ -140,6 +170,7 @@ public:
     OutputSet audio_output_set;
     AudioOutput *ao;
 
+    /*clock*/
     AVClock clock;
     ClockType clock_type;
     ResampleType resample_type;
@@ -431,6 +462,32 @@ bool PlayerPrivate::applySubtitleStream()
         subtitleHeaderChanged(&mediainfo);
     }
     return true;
+}
+
+void LoadMediaAsync::stop()
+{
+    if (d->media_status == Loading)
+        d->demuxer->abort();
+}
+void LoadMediaAsync::run()
+{
+    d->media_status = Loading;
+    CALL_BACK(d->mediaStatusChanged, Loading);
+    d->loaded = !(d->demuxer->load());
+    if (!d->loaded) {
+        printf("Load media async failed.\n");
+        d->media_status = Invalid;
+        CALL_BACK(d->mediaStatusChanged, Invalid);
+        return;
+    }
+    d->media_status = Loaded;
+    CALL_BACK(d->mediaStatusChanged, Loaded);
+    d->initRenderVideo();
+    d->clock.setMaxDuration(d->demuxer->maxDuration());
+    d->applySubtitleStream();
+    d->playInternal();
+    d->media_status = Prepared;
+    CALL_BACK(d->mediaStatusChanged, Prepared);
 }
 
 NAMESPACE_END

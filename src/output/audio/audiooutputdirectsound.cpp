@@ -163,6 +163,7 @@ FACTORY_REGISTER(AudioOutputBackend, DirectSound, "DirectSound")
 
 AudioOutputDirectSound::AudioOutputDirectSound() :
     AudioOutputBackend(new AudioOutputDirectSoundPrivate),
+    dll(nullptr),
     dsound(nullptr),
     prim_buf(nullptr),
     stream_buf(nullptr),
@@ -261,6 +262,7 @@ bool AudioOutputDirectSound::unloadDsound()
 {
     if (dll)
         FreeLibrary(dll);
+    dll = nullptr;
     return true;
 }
 

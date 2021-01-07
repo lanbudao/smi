@@ -271,7 +271,7 @@ public:
         initBitsPerPixel();
     }
 
-    uint8_t flags() const {
+    uint64_t flags() const {
         if (!descriptor)
             return 0;
         return descriptor->flags;

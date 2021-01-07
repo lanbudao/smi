@@ -23,7 +23,7 @@ public:
         serial(0),
 		mode(BufferPackets),
 		buffering(true), // in buffering state at the beginning
-		max(1.0),
+		max(1.5),
         realtime(false),
 		buffer(24),
 		value0(0),

@@ -103,15 +103,15 @@ enum MediaType {
 enum MediaStatus
 {
     NoMedia = 0, // initial status, not invalid. // what if set an empty url and closed?
-    Unloaded = 1, // unloaded // (TODO: or when a source(url) is set?)
+    Unloaded = 1, // unloaded
     Loading = 1<<1, // when source is set
     Loaded = 1<<2, // if auto load and source is set. player is stopped state
     Prepared = 1<<8, // all tracks are buffered and ready to decode frames. tracks failed to open decoder are ignored
     Stalled = 1<<3, // insufficient buffering or other interruptions (timeout, user interrupt)
-    Buffering = 1<<4, // NOT IMPLEMENTED
-    Buffered = 1<<5, // when playing //NOT IMPLEMENTED
+    Buffering = 1<<4, // when buffering, used to play real-time stream
+    Buffered = 1<<5, // when buffered, used to play real-time stream
     End = 1<<6, // Playback has reached the end of the current media.
-    Seeking = 1<<7, // can be used with Buffering, Loaded. FIXME: NOT IMPLEMENTED
+    Seeking = 1<<7, // not used
     Invalid = 1<<30, //  invalid media source
 };
 

@@ -322,10 +322,9 @@ void AVDemuxThread::run()
         }
         audio_has_pic = demuxer->hasAttachedPic();
         // use || or &&? or do not check whether sbuffer is full? 
-		if ( (!abuffer || (abuffer && abuffer->checkFull())) ||
-            (vbuffer && !audio_has_pic && vbuffer->checkFull()) ||
-			//(!(vbuffer && !audio_has_pic) || (vbuffer && vbuffer->checkFull())) ||
-            (sbuffer && sbuffer->checkFull()) ) {
+		if ( (!abuffer || (abuffer && abuffer->checkFull())) &&
+            (vbuffer && !audio_has_pic && vbuffer->checkFull())/* ||
+            (sbuffer && sbuffer->checkFull())*/ ) {
 			/* wait 10 ms */
 			std::unique_lock<std::mutex> lock(d->wait_mutex);
 			d->continue_read_cond.wait_for(lock, std::chrono::milliseconds(10));

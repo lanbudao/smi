@@ -49,20 +49,46 @@ void Player::setMediaStreamDisable(MediaType type)
 void Player::prepare()
 {
     DPTR_D(Player);
-    stop();
-    if (d->url.empty())
-        return;
-    d->loaded = !(d->demuxer->load());
-    if (!d->loaded) {
-        printf("Load media failed.\n");
+
+    if (d->url.empty()) {
+        AVWarning("media url is empty!\n");
         return;
     }
-    if (d->mediaStatusChanged)
-        d->mediaStatusChanged(Loaded);
+    stop();
+    d->media_status = Loading;
+    CALL_BACK(d->mediaStatusChanged, Loading);
+    d->loaded = !(d->demuxer->load());
+    if (!d->loaded) {
+        printf("Load media async failed.\n");
+        d->media_status = Invalid;
+        CALL_BACK(d->mediaStatusChanged, Invalid);
+        return;
+    }
+    d->media_status = Loaded;
+    CALL_BACK(d->mediaStatusChanged, Loaded);
     d->initRenderVideo();
     d->clock.setMaxDuration(d->demuxer->maxDuration());
     d->applySubtitleStream();
     d->playInternal();
+    d->media_status = Prepared;
+    CALL_BACK(d->mediaStatusChanged, Prepared);
+}
+
+void Player::prepareAsync()
+{
+    DPTR_D(Player);
+    if (d->url.empty()) {
+        AVWarning("media url is empty!\n");
+        return;
+    }
+    stop();
+    d->load_media_async = new LoadMediaAsync(this, d);
+    d->load_media_async->start();
+}
+
+MediaStatus Player::mediaStatus()
+{
+    return d_func()->media_status;
 }
 
 void Player::pause(bool p)
@@ -87,9 +113,18 @@ void Player::stop()
 {
 	DPTR_D(Player);
 
-	if (!d->loaded)
-		return;
+    if (d->load_media_async) {
+        d->load_media_async->stop();
+        d->load_media_async->wait();
+        delete d->load_media_async;
+        d->load_media_async = nullptr;
+    }
+    if (d->media_status == Unloaded)
+        return;
+	//if (!d->loaded)
+	//	return;
 	d->demux_thread->stop();
+    d->demux_thread->wait();
     if (d->audio_thread) {
         d->audio_thread->packets()->clear();
         d->audio_thread->packets()->blockFull(false);
@@ -108,6 +143,8 @@ void Player::stop()
     }
 	d->demuxer->unload();
     d->loaded = false;
+    d->media_status = Unloaded;
+    CALL_BACK(d->mediaStatusChanged, Unloaded);
 }
 
 void Player::setSpeed(float speed)
@@ -155,8 +192,10 @@ void Player::seek(double t, SeekType type)
     DPTR_D(Player);
 
     AVDebug("seek started.\n");
-    if (!isPlaying())
+    if (d->media_status != Prepared) {
+        AVDebug("media is not prepared.\n");
         return;
+    }
     if (!d->demuxer->isSeekable())
         return;
     /* if pos is nan, it indicates that the previous seek operation has not been completed */
@@ -384,8 +423,14 @@ void Player::setBufferProcessCallback(std::function<void(float p)> f)
 void Player::setMediaStatusCallback(std::function<void (MediaStatus)> f)
 {
     DPTR_D(Player);
-    d->mediaStatusChanged = std::move(f);
-    d->demux_thread->setMediaStatusChangedCB(f);
+    d->mediaStatusChanged = f;
+    auto fun = [this, d](MediaStatus s)->void {
+        CALL_BACK(d->mediaStatusChanged, s);
+        if (d->ao) {
+            d->ao->pause(s == Buffering || d->paused);
+        }
+    };
+    d->demux_thread->setMediaStatusChangedCB(fun);
 }
 
 void Player::setStreamChangedCallback(std::function<void(MediaType type, int stream)> f)

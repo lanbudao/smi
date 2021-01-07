@@ -32,6 +32,7 @@ public:
     void setWantedStreamSpec(MediaType type, const char* spec);
     void setMediaStreamDisable(MediaType type);
     int  load();
+    void abort();
     void unload();
     bool isLoaded();
     bool atEnd();
