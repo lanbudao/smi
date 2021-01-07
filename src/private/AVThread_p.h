@@ -48,8 +48,10 @@ public:
     }
 
 	void waitForRefreshMs(int ms) {
-		std::unique_lock<std::mutex> lock(wait_mutex);
-		continue_refresh_cond.wait_for(lock, std::chrono::milliseconds(ms));
+        if (ms > 0) {
+            std::unique_lock<std::mutex> lock(wait_mutex);
+            continue_refresh_cond.wait_for(lock, std::chrono::milliseconds(ms));
+        }
 	}
 
     MediaInfo *media_info;

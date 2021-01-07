@@ -337,7 +337,7 @@ void VideoThread::run()
     Packet pkt;
 
     double last_duration,  delay, time;
-    double remaining_time = REFRESH_RATE;
+    double remaining_time = 0.0;
     bool dequeue_req = true;
 
     d->stopped = false;
@@ -361,25 +361,28 @@ void VideoThread::run()
     while (true) {
         if (d->stopped)
             break;
-
+        if (remaining_time > 0) {
+            d->waitForRefreshMs(FORCE_INT(remaining_time * 1000));
+        }
+        remaining_time = REFRESH_RATE;
 		if (d->paused) {
 			d->waitForRefreshMs(10);
 			continue;
 		}
 
-		if (dequeue_req) {
-			*frame = frames->dequeue(&valid, 10);
-			if (!valid) {
-				continue;
-			}
-			d->last_frame_serial = frame->serial();
-			d->last_frame_pts = frame->timestamp();
-			d->last_frame_duration = frame->duration();
-			dequeue_req = false;
-		}
+        *frame = frames->front(&valid, 1);
+        if (!valid) {
+            continue;
+        }
+        d->last_frame_serial = frame->serial();
+        d->last_frame_pts = frame->timestamp();
+        d->last_frame_duration = frame->duration();
 
 		if (frame->serial() != d->packets.serial()) {
-			dequeue_req = true;
+            frames->dequeue(&valid, 10);
+            if (!valid) {
+                AVWarning("dequeue video queue error!\n");
+            }
 			continue;
 		}
 
@@ -394,15 +397,11 @@ void VideoThread::run()
         delay = d->compute_target_delay(last_duration);
 
         time = av_gettime_relative() / 1000000.0;
-		remaining_time = d->frame_timer + delay - time;
-		if (remaining_time > 0) {
-            if (remaining_time > 1) {
-                /*drop frame if remaining time more than 1 second*/
-                /*it works when play real-time stream, but is it perfect?*/
-                continue;
-            }
-			d->waitForRefreshMs(FORCE_INT(remaining_time * 1000));
-		}
+        if (time < d->frame_timer + delay) {
+            remaining_time = std::min(d->frame_timer + delay - time, remaining_time);
+            continue;
+        }
+
         /* Set frame_time as the start time of current frame, also is the end time of last frame */
         d->frame_timer += delay;
         if (delay > 0 && time - d->frame_timer > AV_SYNC_THRESHOLD_MAX)
@@ -450,7 +449,10 @@ void VideoThread::run()
 			d->step = false;
 			d->stepCallback();
 		}
-        //AVDebug("video frame pts: %.3f\n", frame->timestamp());
+        frames->dequeue(&valid, 10);
+        if (!valid) {
+            AVWarning("dequeue video queue error!\n");
+        }
         //AVDebug("A-V: %.3f, %.3f, %.3f\n",
         //    clock->value(SyncToAudio),
         //    clock->value(SyncToVideo),
