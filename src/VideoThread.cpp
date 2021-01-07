@@ -396,6 +396,11 @@ void VideoThread::run()
         time = av_gettime_relative() / 1000000.0;
 		remaining_time = d->frame_timer + delay - time;
 		if (remaining_time > 0) {
+            if (remaining_time > 1) {
+                /*drop frame if remaining time more than 1 second*/
+                /*it works when play real-time stream, but is it perfect?*/
+                continue;
+            }
 			d->waitForRefreshMs(FORCE_INT(remaining_time * 1000));
 		}
         /* Set frame_time as the start time of current frame, also is the end time of last frame */
