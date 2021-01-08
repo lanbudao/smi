@@ -24,67 +24,89 @@ class AudioDecoderThread: public CThread
 public:
     AudioDecoderThread():
         CThread("audio decoder"),
-        stopped(false),
+        abort(false),
         pkts(nullptr),
-        serial(-1)
+        serial(-1),
+        eof(false)
     {
 
     }
+
 	~AudioDecoderThread() 
 	{
 	}
+
     void stop()
 	{
 		frames.clear();
-        stopped = true;
+        abort = true;
     }
+
     void run()
     {
         bool pkt_valid = true;
         Packet pkt;
         AudioFrame frame;
-
+        flush_dec = false;
         while (true) {
-            if (stopped)
+            int ret = 0;
+            if (abort)
                 break;
-            if (!pkts->prepared()) {
-                msleep(1);
-                continue;
+            if (flush_dec) {
+                pkt = Packet::createFlush();
             }
-            pkt = pkts->dequeue(&pkt_valid, 10);
-			if (!pkt_valid) {
-				continue;
-			}
-            serial = pkt.serial;
-            if (pkt.serial != pkts->serial()) {
-                AVDebug("The audio pkt is obsolete.\n");
-                continue;
+            else {
+                if (!pkts->prepared()) {
+                    msleep(1);
+                    continue;
+                }
+                pkt = pkts->dequeue(&pkt_valid, 10);
+                if (!pkt_valid) {
+                    continue;
+                }
+                flush_dec = pkt.isEOF();
+                serial = pkt.serial;
+                if (pkt.serial != pkts->serial()) {
+                    AVDebug("The video pkt is obsolete.\n");
+                    continue;
+                }
+                if (pkt.isFlush()) {
+                    AVDebug("Seek is required, flush video decoder.\n");
+                    decoder->flush();
+                    /* must clear the frames buffer for seek*/
+                    frames.clear();
+                    continue;
+                }
             }
-            if (pkt.isFlush()) {
-                AVDebug("Seek is required, flush audio decoder.\n");
-                decoder->flush();
-				frames.clear();
-                continue;
-            }
-            if (decoder->decode(pkt) < 0) {
+            // decode
+            ret = decoder->decode(pkt);
+            if (ret < 0) {
+                if (ret == AVERROR_EOF) {
+                    flush_dec = false;
+                    eof = true;
+                }
                 continue;
             }
             frame = decoder->frame();
             if (!frame.isValid()) {
                 continue;
             }
+            eof = false;
             frame.setSerial(serial);
             frames.enqueue(frame);
         }
         CThread::run();
     }
 
-    bool stopped;
+    bool abort;
     PacketQueue *pkts;
     AudioFrameQueue frames;
     AVClock *clock;
     AudioDecoder* decoder;
     int serial;
+    // flush decoder when media is eof
+    bool flush_dec;
+    bool eof;
 };
 
 const int8_t AUDIO_DIFF_AVG_NB = 20;
@@ -221,6 +243,10 @@ void AudioThread::run()
         if (d->paused) {
 			d->waitForRefreshMs(10);
             continue;
+        }
+        if (has_ao) {
+            /* avoid dsound playing looping when media is eof */
+            ao->pause(d->decode_thread->eof || ao->isPaused());
         }
         AudioFrame frame = d->decode_thread->frames.dequeue(&pkt_valid, 10);
         if (!pkt_valid)
