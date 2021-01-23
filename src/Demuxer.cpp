@@ -4,6 +4,7 @@
 #include "sdk/mediainfo.h"
 #include "AVLog.h"
 #include "inner.h"
+#include "io/mediaio.h"
 
 #include <string>
 #include <vector>
@@ -108,7 +109,8 @@ public:
         format_opts(nullptr),
         interrupt_handler(nullptr),
         show_status(false),
-		seek_pos(0)
+		seek_pos(0),
+        media_io(nullptr)
     {
         memset(stream_index, -1, sizeof(stream_index));
         audio_enabled = video_enabled = subtitle_enabled = true;
@@ -133,6 +135,10 @@ public:
             avformat_free_context(format_ctx);
         if (avpkt)
             av_packet_free(&avpkt);
+        if (media_io) {
+            delete media_io;
+            media_io = nullptr;
+        }
     }
 
     void prepareStreams();
@@ -170,6 +176,9 @@ public:
 	std::mutex mutex;
     bool show_status;
 	double seek_pos;
+
+    /* media io */
+    MediaIO *media_io;
 };
 
 void DemuxerPrivate::prepareStreams()
@@ -257,10 +266,26 @@ Demuxer::~Demuxer()
     delete d->interrupt_handler;
 }
 
-void Demuxer::setMedia(const std::string& url)
+void Demuxer::setMedia(const std::string& url, const StringMap & opts)
 {
     DPTR_D(Demuxer);
+    int colon = 0;
     d->url = url;
+
+    colon = url.find(":"); 
+    char letter = url.at(0); //drive letter
+    if (colon == 1 && ((letter >= 'A' && letter <= 'Z') || (letter >= 'a' && letter <= 'z'))) {
+        return;
+    }
+    // use MediaIO to support protocols witch not supported by ffmpeg
+    if (colon > 0) {
+        const std::string protocol = url.substr(0, colon);
+        d->media_io = MediaIO::createForProtocol(protocol);
+        if (d->media_io) {
+            d->media_io->setOptionsForIOCodec(opts);
+            d->media_io->setUrl(url);
+        }
+    }
 }
 
 int Demuxer::streamIndex(MediaType type)
@@ -310,7 +335,22 @@ int Demuxer::load()
     }
 
     d->interrupt_handler->begin(InterruptHandler::OpenStream);
-    ret = avformat_open_input(&d->format_ctx, d->url.c_str(), d->input_format, &d->format_opts);
+    if(d->media_io) {
+        if (d->media_io->accessMode() == MediaIO::Write) {
+            AVWarning("wrong MediaIO accessMode. MUST be Read\n");
+        }
+        d->format_ctx->pb = (AVIOContext*)d->media_io->avioContext();
+        d->format_ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
+        AVDebug("avformat_open_input: d->format_ctx:'%p'..., MediaIO('%s'): %p\n",
+            d->format_ctx, d->media_io->name().c_str(), d->media_io);
+        ret = avformat_open_input(&d->format_ctx, "MediaIO", d->input_format, &d->format_opts);
+        AVDebug("avformat_open_input: (with MediaIO) ret:%d\n", ret);
+    }
+    else {
+        AVDebug("avformat_open_input: d->format_ctx:'%p', url:'%s'...\n", d->format_ctx, d->url.c_str());
+        ret = avformat_open_input(&d->format_ctx, d->url.c_str(), d->input_format, &d->format_opts);
+        AVDebug("avformat_open_input: url:'%s' ret:%d\n", d->url.c_str(), ret);
+    }
     d->interrupt_handler->end();
     if (ret < 0) {
         avformat_close_input(&d->format_ctx);

@@ -164,7 +164,8 @@ list(APPEND HEADERS
     util/logsink.h
     util/mkid.h
     util/semaphore.h
-    util/stringaide.h)
+    util/stringaide.h
+	io/mediaio.h)
 
 list(APPEND SOURCES
 	AVClock.cpp
@@ -218,7 +219,8 @@ list(APPEND SOURCES
 	subtitle/subtitledecoderffmpeg.cpp
 	util/CThread.cpp
 	util/logsink.cpp
-    util/semaphore.cpp)
+    util/semaphore.cpp
+	io/mediaio.cpp)
 	
 #if (EXISTS ${FREETYPE_DIR})
 #   list(APPEND EXTRA_DEFS -DSMI_HAVE_FREETYPE=1)
@@ -231,6 +233,16 @@ if (EXISTS ${LIBASS_DIR})
     list(APPEND EXTRA_DEFS -DSMI_HAVE_LIBASS=1)
 	list(APPEND EXTRA_INCLUDE ${LIBASS_DIR}/include)
 	link_directories(${LIBASS_DIR}/lib)
+endif()
+if (EXISTS ${LIBDVDREAD_DIR})
+	if (EXISTS ${LIBDVDNAV_DIR})
+		list(APPEND EXTRA_DEFS -DSMI_HAVE_DVD=1)
+		list(APPEND SOURCES io/dvdio.cpp)
+		list(APPEND EXTRA_INCLUDE ${LIBDVDREAD_DIR}/include)
+		list(APPEND EXTRA_INCLUDE ${LIBDVDNAV_DIR}/include)
+		link_directories(${LIBDVDREAD_DIR}/lib)
+		link_directories(${LIBDVDNAV_DIR}/lib)
+	endif()
 endif()
 # Include path
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
@@ -253,6 +265,12 @@ target_link_libraries(${MODULE}
 if (EXISTS ${LIBASS_DIR})
 	target_link_libraries(${MODULE} 
 		LINK_PRIVATE ass)
+endif()
+if (EXISTS ${LIBDVDREAD_DIR})
+	if (EXISTS ${LIBDVDNAV_DIR})
+	target_link_libraries(${MODULE} 
+		LINK_PRIVATE dvdread dvdnav)
+	endif()
 endif()
  
 set_target_properties(${MODULE} PROPERTIES

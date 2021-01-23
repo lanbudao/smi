@@ -64,11 +64,11 @@ int main(int argc, char *argv[])
         sprintf_s(title, "Buffering: %d%%", FORCE_INT(p * 100));
         SDL_SetWindowTitle(window, title);
     });
-    //player->setBufferPara(BufferTime, 3 * 1000);
+    player->setBufferPara(BufferTime, 5 * 1000);
     //player->setClockType(SyncToVideo);
     //player->setResampleType(ResampleSoundtouch);
     //player->setSpeed(2.0);
-    player->prepare();
+    player->prepareAsync();
     
     /* filter test */
     LibAVFilterAudio* afilter = new LibAVFilterAudio;
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
     vfilter->setOptions("curves=vintage");
     //player->installFilter(vfilter, render);
     
-    player->addExternalSubtitle("E:/sub.srt");
+    //player->addExternalSubtitle("E:/sub.srt");
 
     /*Set window icon*/
     SDL_Surface *icon = SDL_LoadBMP("app.bmp");

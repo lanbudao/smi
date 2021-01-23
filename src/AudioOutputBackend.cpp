@@ -21,11 +21,11 @@ std::vector<std::string> AudioOutputBackend::defaultPriority()
 {
     static std::vector<std::string> backends;
 
-#ifdef SMI_HAVE_DSOUND
-    backends.push_back("Directsound");
-#endif
 #ifdef SMI_HAVE_PORTAUDIO
     backends.push_back("PortAudio");
+#endif
+#ifdef SMI_HAVE_DSOUND
+    backends.push_back("Directsound");
 #endif
 
     return backends;

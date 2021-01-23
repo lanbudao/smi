@@ -87,6 +87,7 @@ using namespace std;
 
 typedef unsigned char uchar;
 typedef std::list<std::string> StringList;
+typedef std::map<std::string, std::string> StringMap;
 
 NAMESPACE_BEGIN
 
