@@ -1,6 +1,7 @@
 /******************************************************************************
-    SMI:  A lightweight player based on ffmpeg and portaudio
-    Copyright (C) 2012-2020 lanbudao <theartedly@gmail.com>
+    SMI:  Simple media interface based on ffmpeg witch used to
+    play media file or media stream.
+    Copyright (C) 2020-2021 lanbudao <theartedly@gmail.com>
 
 *   This file is part of SMI
 

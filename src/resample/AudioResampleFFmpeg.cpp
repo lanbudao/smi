@@ -139,15 +139,15 @@ bool AudioResampleFFmpeg::convert(const uchar **data)
         AV_ROUND_UP));
 #if 1
     d->data.reset();
-    int64_t out_count = 0;
+    int out_count = 0;
     int out_size = 0;
     /**
      * I think it's better to changed wanted_nb_samples when speed changed, 
      * rather than to change sample-rate
      */
-    int wanted_nb_samples = d->wanted_nb_samples / d->speed;
+    int wanted_nb_samples = FORCE_INT(d->wanted_nb_samples / d->speed);
     if (wanted_nb_samples != d->in_samples_per_channel) {
-        out_count = (int64_t)wanted_nb_samples * out_sample_rate / in_sample_rate + 256;
+        out_count = wanted_nb_samples * out_sample_rate / in_sample_rate + 256;
         out_size = av_samples_get_buffer_size(NULL,
             d->out_format.channels(),
             out_count,
