@@ -19,7 +19,7 @@ MediaIO::~MediaIO()
     release();
 }
 
-std::list<std::string> MediaIO::builtInNames()
+std::list<std::string> MediaIO::supportProtocols()
 {
     static std::list<std::string> names;
     if (!names.empty())
@@ -60,13 +60,13 @@ MediaIO* MediaIO::createForUrl(const std::string &url)
 static int av_read(void *opaque, unsigned char *buf, int buf_size)
 {
     MediaIO* io = static_cast<MediaIO*>(opaque);
-    return io->read((char*)buf, buf_size);
+    return io->read(buf, buf_size);
 }
 
 static int av_write(void *opaque, unsigned char *buf, int buf_size)
 {
     MediaIO* io = static_cast<MediaIO*>(opaque);
-    return io->write((const char*)buf, buf_size);
+    return io->write(buf, buf_size);
 }
 
 static int64_t av_seek(void *opaque, int64_t offset, int whence)
@@ -151,7 +151,12 @@ void* MediaIO::avioContext()
     unsigned char* buf = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
     // open for write if 1. SET 0 if open for read otherwise data ptr in av_read(data, ...) does not change
     const int write_flag = (accessMode() == Write) && isWritable();
-    d->ctx = avio_alloc_context(buf, bufferSize() > 0 ? bufferSize() : kBufferSizeDefault, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
+    d->ctx = avio_alloc_context(buf, 
+        bufferSize() > 0 ? bufferSize() : kBufferSizeDefault, write_flag,
+        this,
+        &av_read,
+        write_flag ? &av_write : NULL,
+        &av_seek);
     // if seekable==false, containers that estimate duration from pts(or bit rate) will not seek to the last frame when computing duration
     // but it's still seekable if call seek outside(e.g. from demuxer)
     // TODO: isVariableSize: size = -real_size
