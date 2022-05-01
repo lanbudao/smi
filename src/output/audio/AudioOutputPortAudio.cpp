@@ -51,7 +51,7 @@ AudioOutputPortAudio::AudioOutputPortAudio():
     outputLatency(0.0),
     stream(nullptr)
 {
-    AVDebug("PortAudio' version %d, %s", Pa_GetVersion(), Pa_GetVersionText());
+    AVDebug("PortAudio' version %d, %s\n", Pa_GetVersion(), Pa_GetVersionText());
 
     if (!initialize()) {
         return;
@@ -65,8 +65,7 @@ AudioOutputPortAudio::AudioOutputPortAudio():
         const PaHostApiInfo *hostApiInfo = Pa_GetHostApiInfo(devInfo->hostApi);
         if (!hostApiInfo)
             continue;
-        std::string name = "";//Util::sformat("%s: %s", devInfo->name, hostApiInfo->name);
-        AVDebug("audio device %d: %s\n", i, name.c_str());
+        AVDebug("audio device %d=> %s:%s\n", i, devInfo->name, hostApiInfo->name);
         AVDebug("max in/out channel: %d / %d\n", devInfo->maxInputChannels, devInfo->maxOutputChannels);
     }
 

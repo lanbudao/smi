@@ -18,4 +18,4 @@ set(LIBDVDREAD_DIR "C:\\msys64\\usr\\local\\libdvdread")
 set(LIBDVDNAV_DIR "C:\\msys64\\usr\\local\\libdvdnav")
 
 # If u want to build the example of SDL, set the SDL_DIR
-set(SDL_DIR E:/source/opensource/sdl)
+set(SDL_DIR H:\\source_laptop\\opensource\\SDL)

@@ -21,6 +21,10 @@ std::vector<std::string> AudioOutputBackend::defaultPriority()
 {
     static std::vector<std::string> backends;
 
+#ifdef SMI_HAVE_XAUDIO
+    //XAudio is recommended for windows
+    backends.push_back("XAudio");
+#endif
 #ifdef SMI_HAVE_PORTAUDIO
     backends.push_back("PortAudio");
 #endif

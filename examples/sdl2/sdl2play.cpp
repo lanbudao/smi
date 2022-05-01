@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     });
     player->setBufferPara(BufferTime, 5 * 1000);
     //player->setClockType(SyncToVideo);
-    //player->setResampleType(ResampleSoundtouch);
+    player->setResampleType(ResampleSoundtouch);
     //player->setSpeed(2.0);
     player->prepareAsync();
     
@@ -87,6 +87,9 @@ int main(int argc, char *argv[])
         SDL_SetColorKey(icon, SDL_TRUE, SDL_MapRGB(icon->format, 255, 0, 255));
         SDL_SetWindowIcon(window, icon);
         SDL_FreeSurface(icon);
+    }
+    else {
+        AVError("Failed to load app icon: %s\n", SDL_GetError());
     }
     SDL_Event event;
     while (1) {
@@ -144,7 +147,7 @@ int main(int argc, char *argv[])
 		else if (event.type == update_event) {
             player->renderVideo();
             SDL_GL_SwapWindow(window);
-			continue;;
+			continue;
         }
         else if (event.type == SDL_QUIT) {
             player->stop();

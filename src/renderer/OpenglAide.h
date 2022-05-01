@@ -21,9 +21,9 @@ typedef struct OpenglVersion {
 	bool isValid() {return major > 0 || minor > 0 || patch > 0;}
 	std::string toString() {
 		std::string s;
-		s + std::to_string(major);
-		s + std::to_string(minor);
-		s + std::to_string(patch);
+		s += std::to_string(major);
+		s += std::to_string(minor);
+		s += std::to_string(patch);
 	}
 } OpenglVersion;
 

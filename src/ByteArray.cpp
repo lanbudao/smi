@@ -23,7 +23,8 @@ public:
     }
     ~ByteArrayPrivate()
     {
-        av_fifo_freep(&data);
+        if (data)
+            av_fifo_freep(&data);
     }
     AVFifoBuffer *data;
     size_t size;
@@ -143,6 +144,14 @@ void ByteArray::append(const char* data, size_t size)
 	av_fifo_grow(d->data, size);
 	av_fifo_generic_write(d->data, (void*)data, size, nullptr);
 	d->size = av_fifo_size(d->data);
+}
+
+void ByteArray::clear()
+{
+    DPTR_D(ByteArray);
+
+    if (d->data)
+        av_fifo_freep(&d->data);
 }
 
 NAMESPACE_END

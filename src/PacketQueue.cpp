@@ -222,7 +222,7 @@ void PacketQueue::onEnqueue(const Packet & pkt)
 	if (!d->record.empty())
         info.bytes += d->record.back().bytes;
     info.v = d->value1;
-    info.t = av_gettime_relative() / 1000.0;
+    info.t = static_cast<int64_t>(av_gettime_relative() / 1000.0);
 	d->record.push_back(info);
 }
 
@@ -268,7 +268,7 @@ float PacketQueuePrivate::calc_speed(bool use_bytes) const
         AVWarning("PacketBuffer internal error. delta(bytes %d): %lld\n", use_bytes, delta);
         return 0;
     }
-    return (double)delta / dt;
+    return static_cast<float>(delta / dt);
 }
 
 NAMESPACE_END

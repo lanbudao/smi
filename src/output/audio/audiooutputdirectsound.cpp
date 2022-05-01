@@ -83,13 +83,13 @@ typedef struct {
 #define SPEAKER_TOP_BACK_RIGHT         0x20000
 #define SPEAKER_RESERVED               0x80000000
 
-static int channelMaskToMS(int64_t av) {
+int channelMaskToMS(int64_t av) {
     if (av >= (int64_t)SPEAKER_RESERVED)
         return 0;
     return (int)av;
 }
 
-static int channelLayoutToMS(int64_t av) {
+int channelLayoutToMS(int64_t av) {
     return channelMaskToMS(av);
 }
 class AudioOutputDirectSoundPrivate : public AudioOutputBackendPrivate
@@ -214,7 +214,7 @@ bool AudioOutputDirectSound::initialize()
 bool AudioOutputDirectSound::uninitialize()
 {
     SAFE_RELEASE(notify);
-    //SAFE_RELEASE(prim_buf);
+    SAFE_RELEASE(prim_buf);
     SAFE_RELEASE(stream_buf);
     SAFE_RELEASE(dsound);
     unloadDsound();

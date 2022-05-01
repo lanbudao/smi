@@ -198,6 +198,7 @@ public:
         if (backend) {
             backend->close();
             delete backend;
+            backend = nullptr;
         }
     }
 

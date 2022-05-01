@@ -32,6 +32,8 @@ public:
 
 	void append(const char* data, size_t size);
 
+    void clear();
+
 private:
     DPTR_DECLARE(ByteArray)
 };

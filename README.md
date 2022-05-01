@@ -2,7 +2,7 @@
 
 #### Description
 
-Simple media interface based on ffmpeg
+Simple media interface based on ffmpeg(refer to QtAV)
 
 #### Feature
 
