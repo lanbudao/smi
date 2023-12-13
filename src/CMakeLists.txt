@@ -249,10 +249,10 @@ list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
 list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})
 
-link_directories(${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
+link_directories(${CMAKE_SOURCE_DIR}/lib/${CURRENT_PLATFORM})
 
 # Output path
-set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
+set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib/${CURRENT_PLATFORM})
 add_library(${MODULE} SHARED ${SOURCES} ${HEADERS})
 
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})

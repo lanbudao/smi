@@ -48,7 +48,7 @@ list(APPEND HEADERS
     TDStretch.h)
 
 # Output path
-set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/bin/${CMAKE_INTDIR})
+set(LIBRARY_OUTPUT_PATH ${CMAKE_SOURCE_DIR}/lib/${CURRENT_PLATFORM})
 add_library(${MODULE} STATIC ${SOURCES} ${HEADERS})
 
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
