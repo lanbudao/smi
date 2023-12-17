@@ -57,7 +57,7 @@ public:
     {
 
     }
-	void setStatus(int s) { status = s; };
+    void setStatus(int s) { status = s; }
     void setInterruptTimeout(int64_t t) { timeout = t;}
 
     static int handleInterrupt(void *obj)
@@ -114,7 +114,7 @@ public:
     {
         memset(stream_index, -1, sizeof(stream_index));
         audio_enabled = video_enabled = subtitle_enabled = true;
-#if FFMPEG_MODULE_CHECK(LIBAVFORMAT, 58, 27, 103)
+#if FFMPEG_MODULE_CHECK(LIBAVFORMAT, 58, 9, 100)
         void *opaque = nullptr;
         av_demuxer_iterate(&opaque);
 #else
@@ -596,7 +596,7 @@ void Demuxer::initMediaInfo()
             info.rotate = 0.0;
             info.time_base = Rational(st->time_base.num, st->time_base.den);
 #if AV_MODULE_CHECK(LIBAVFORMAT, 55, 18, 0, 39, 100)
-            info.display_aspect_ratio = Rational(st->display_aspect_ratio.num, st->display_aspect_ratio.den);
+//            info.display_aspect_ratio = Rational(st->display_aspect_ratio.num, st->display_aspect_ratio.den);
             info.sample_aspect_ratio = Rational(st->sample_aspect_ratio.num, st->sample_aspect_ratio.den);
             uint8_t *sd = av_stream_get_side_data(st, AV_PKT_DATA_DISPLAYMATRIX, nullptr);
             if (sd) {

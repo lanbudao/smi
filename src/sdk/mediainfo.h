@@ -2,7 +2,16 @@
 #define MEDIAINFO_H
 
 #include <list>
+#include <vector>
 #include <string>
+
+typedef struct Chapter_ {
+    int index;
+    int begin;
+    std::string begin_str; //hh:mm:ss
+    int end;
+    std::string end_str; //hh:mm:ss
+} Chapter;
 
 typedef struct Rational {
     int num; ///< Numerator
@@ -86,5 +95,39 @@ typedef struct MediaInfo_ {
     int subtitle_track = -1;
 
 } MediaInfo;
+
+/**
+ *\brief DVD information
+ */
+typedef struct DVDTitleInfo_ {
+    int nr_of_chapters;
+    std::vector<Chapter> chapters;
+    VideoStreamInfo video;                  /* only one video stream */
+    int nr_of_audios;
+    std::list<AudioStreamInfo> audios;      /* 9 audio streams at most */
+    int nr_of_subtitles;
+    std::list<SubtitleStreamInfo> subtitles;/* 23 subtitle streams at most */
+
+    /* Current audio and subtitle stream*/
+    AudioStreamInfo *audio = nullptr;
+    SubtitleStreamInfo *subtitle = nullptr;
+} DVDTitleInfo;
+
+typedef struct DVDInfo_ {
+    /* Video Manager Information Management Table */
+    std::string vmg_identifier;
+    uint8_t  specification_version;
+    uint32_t vmg_category;
+    uint32_t vmg_region_code;
+    uint16_t vmg_nr_of_volumes;   /* VMG Number of Volumes */
+    uint16_t vmg_this_volume_nr;  /* VMG This Volume */
+    uint16_t vmg_nr_of_title_sets;  /* Number of VTSs. */
+
+    uint32_t first_play_pgc;      /* Start byte of First Play PGC (FP PGC) */
+    
+    /* video title info */
+    std::list<DVDTitleInfo> titles;
+
+} DVDInfo;
 
 #endif // MEDIAINFO_H

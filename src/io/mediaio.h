@@ -20,7 +20,7 @@ public:
         Read, // default
         Write
     };
-    static std::list<std::string> builtInNames();
+    static std::list<std::string> supportProtocols();
     /*!
      * \brief createForProtocol
      * If an MediaIO subclass SomeInput.protocols() contains the protocol, return it's instance.
@@ -54,12 +54,12 @@ public:
      * \brief read
      * read at most maxSize bytes to data, and return the bytes were actually read
      */
-    virtual int64_t read(char *data, int64_t maxSize) = 0;
+    virtual int read(unsigned char *data, int64_t maxSize) = 0;
     /*!
      * \brief write
      * write at most maxSize bytes from data, and return the bytes were actually written
      */
-    virtual int64_t write(const char* data, int64_t maxSize) {
+    virtual int write(const unsigned char* data, int64_t maxSize) {
         PU_UNUSED(data);
         PU_UNUSED(maxSize);
         return 0;
@@ -109,7 +109,7 @@ public:
     void release();
 
 protected:
-    MediaIO(MediaIOPrivate *d);
+    MediaIO(MediaIOPrivate *d = nullptr);
     DPTR_DECLARE(MediaIO)
 
     virtual void onUrlChanged() {}

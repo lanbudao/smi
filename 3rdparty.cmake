@@ -3,8 +3,8 @@
 # Default, I will find libraries from directory named 'lib' you set, not 'bin'.
 # For example, I will find 'avformat.lib' form 'C:/msys64/usr/local/ffmpeg/lib'.
 
-set(FFMPEG_DIR "H:\\source_laptop\\opensource\\ffmpeg_x64")
-
+set(FFMPEG_DIR "H:\\source_laptop\\opensource\\ffmpeg_")
+string(APPEND FFMPEG_DIR ${CURRENT_PLATFORM})
 # Optional below
 
 # if u want to add subtitle support, set the LIBASS_DIR
