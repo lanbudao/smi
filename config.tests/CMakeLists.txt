@@ -1,0 +1,7 @@
+add_subdirectory(avformat)
+add_subdirectory(avcodec)
+add_subdirectory(avutil)
+add_subdirectory(avfilter)
+#add_subdirectory(avdevice)
+add_subdirectory(swresample)
+add_subdirectory(swscale)

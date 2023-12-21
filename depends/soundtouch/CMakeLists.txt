@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.8.12)
-
 #project(soundtouch)
 set(PROJECT_VERSION ${SMI_MAJOR}.${SMI_MINOR}.${SMI_PATCH})
 set(MODULE soundtouch)

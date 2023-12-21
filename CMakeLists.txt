@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.25)
 
 project(smi)
 # Use C++11
@@ -12,6 +12,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SAFESEH:NO")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /SAFESEH:NO")
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} /SAFESEH:NO")
 
+set(ENABLE_CONFIG_TESTS on)
 # Set Version
 set(SMI_MAJOR 1)
 set(SMI_MINOR 0)
@@ -28,6 +29,12 @@ endif(CMAKE_CL_64)
 
 include(3rdparty.cmake)
 
+if (ENABLE_CONFIG_TESTS)
+    set(EXTRA_LIBS "")
+    set(EXTRA_DEFS "")
+    set(EXTRA_INCLUDE "")
+    add_subdirectory(config.tests)
+endif()
 add_subdirectory(depends)
 add_subdirectory(src)
 add_subdirectory(examples)
