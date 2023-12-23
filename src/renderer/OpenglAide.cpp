@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <sstream>
+#include <cstring>
 
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 
@@ -114,13 +115,15 @@ static const reorder_t gl_channel_maps[] = {
 
 int depth16BitTexture()
 {
-	static int depth = (int)getenv("QTAV_TEXTURE16_DEPTH") == 8 ? 8 : 16;//8 ? 8 : 16;
+    static char* depth_c = getenv("SMI_TEXTURE16_DEPTH");
+    static int depth = depth_c ? (atoi(depth_c) == 8 ? 8 : 16) : 16;//8 ? 8 : 16;
 	return depth;
 }
 
 bool useDeprecatedFormats()
 {
-	static bool v = (int)getenv("QTAV_GL_DEPRECATED") == 1;
+    static char* v_c = getenv("SMI_GL_DEPRECATED");
+    static bool v = v_c ? atoi(getenv(v_c)) == 1 : false;
 	return v;
 }
 

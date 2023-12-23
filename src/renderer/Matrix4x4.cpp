@@ -42,6 +42,7 @@
 
 #include <limits>
 #include <string.h>
+#include "innermath.h"
 
 NAMESPACE_BEGIN
 

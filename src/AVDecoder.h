@@ -20,6 +20,7 @@ public:
 
     void initialize(AVFormatContext *ctx, AVStream* stream);
     AVCodecContext * codecCtx();
+    const StringList& supportedHardwareCodecs() const;
 
     virtual std::string name() const = 0;
     virtual std::string description() const = 0;

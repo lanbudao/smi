@@ -41,7 +41,7 @@ StringList VideoDecoder::supportedCodecs()
         return codecs;
     avcodec_register_all();
     AVCodec* c = nullptr;
-    while ((c=av_codec_next(c))) {
+    while ((c = av_codec_next(c))) {
         if (!av_codec_is_decoder(c) || c->type != AVMEDIA_TYPE_VIDEO)
             continue;
         codecs.push_back(c->name);

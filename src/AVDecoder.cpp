@@ -56,6 +56,7 @@ bool AVDecoder::open(const string &extra)
         avcodec_free_context(&d->codec_ctx);
         return false;
     }
+//    d->codec_ctx->thread_count = 8; // 8 is better
 
     d->opened = false;
     if (!d->codec_ctx) {
@@ -75,6 +76,14 @@ bool AVDecoder::open(const string &extra)
     d->codec_ctx->pkt_timebase = d->current_stream->time_base;
     d->codec_ctx->codec_id = codec->id;
     AV_RUN_CHECK(avcodec_open2(d->codec_ctx, codec, &d->dict), false);
+    // Find the hardware supports
+    const AVCodecHWConfig* config = nullptr;
+    int index = 0;
+    while ((config = avcodec_get_hw_config(codec, index++))) {
+        if (config->device_type) {
+            d->hardware_supports.push_back(av_hwdevice_get_type_name(config->device_type));
+        }
+    }
     onOpen();
     return true;
 }
@@ -170,6 +179,12 @@ AVCodec *AVDecoder::findCodec(const std::string &name, const std::string &hwacce
     if (des)
         return avcodec_find_decoder(static_cast<AVCodecID>(des->id));
     return nullptr;
+}
+
+const StringList& AVDecoder::supportedHardwareCodecs() const
+{
+    DPTR_D(const AVDecoder);
+    return d->hardware_supports;
 }
 
 NAMESPACE_END

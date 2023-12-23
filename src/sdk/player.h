@@ -118,8 +118,8 @@ public:
     bool installFilter(VideoFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
     bool installFilter(RenderFilter *filter, VideoRenderer* render = nullptr, int index = 0x7FFFFFFF);
 
-    /* 
-     *\brief Use 'setWantedStreamSpec' to swtich the track of internal subtitle, 
+    /*
+     *\brief Use 'setWantedStreamSpec' to switch the track of internal subtitle,
      * or 'addExternalSubtitle' to load external subtitle
      */
     void setInternalSubtitleEnabled(bool enabled, VideoRenderer* r = nullptr);

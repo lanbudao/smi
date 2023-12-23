@@ -9,14 +9,14 @@ set(MODULE smi)
 #endif(CMAKE_COMPILER_IS_GNUCXX)
 
 list(APPEND INCLUDE_DIR .
-        sdk
-        glad/include
-        decoder
-        output
-        private
-        renderer
-        filter
-        util)
+    sdk
+    glad/include
+    decoder
+    output
+    private
+    renderer
+    filter
+    util)
 # Check ffmpeg modules
 if (ENABLE_CONFIG_TESTS)
     if (HAVE_AVFORMAT)
@@ -89,8 +89,8 @@ endif()
 if (EXISTS ${PORTAUDIO_DIR})
     message("HAVE-PORTAUDIO: " ${PORTAUDIO_DIR})
     list(APPEND EXTRA_INCLUDE ${PORTAUDIO_DIR}/include)
-#    link_directories(${PORTAUDIO_DIR}/lib)
-#    list(APPEND EXTRA_LIBS portaudio)
+    #    link_directories(${PORTAUDIO_DIR}/lib)
+    #    list(APPEND EXTRA_LIBS portaudio)
     find_library(LIB_PORTAUDIO portaudio ${PORTAUDIO_DIR}/lib)
     list(APPEND EXTRA_LIBS ${LIB_PORTAUDIO})
     list(APPEND EXTRA_DEFS -DSMI_HAVE_PORTAUDIO=1)
@@ -98,12 +98,12 @@ if (EXISTS ${PORTAUDIO_DIR})
 endif()
 
 IF (WIN32)
-    list(APPEND EXTRA_DEFS -DSMI_HAVE_DSOUND=1)
-    list(APPEND SOURCES output/audio/audiooutputdirectsound.cpp)
+list(APPEND EXTRA_DEFS -DSMI_HAVE_DSOUND=1)
+list(APPEND SOURCES output/audio/audiooutputdirectsound.cpp)
 ELSEIF (APPLE)
-    MESSAGE(STATUS "Now is Apple systens.")
+MESSAGE(STATUS "Now is Apple systens.")
 ELSEIF (UNIX)
-    MESSAGE(STATUS "Now is UNIX-like OS's.")
+MESSAGE(STATUS "Now is UNIX-like OS's.")
 ENDIF()
 
 list(APPEND EXTRA_DEFS -DBUILD_SMI_LIB -D__STDC_CONSTANT_MACROS)
@@ -121,7 +121,7 @@ list(APPEND EXTRA_DEFS -DBUILD_SMI_LIB -D__STDC_CONSTANT_MACROS)
 #aux_source_directory(decoder SOURCES)
 
 list(APPEND HEADERS
-	AVClock.h
+    AVClock.h
     AVDecoder.h
     AVDemuxThread.h
     AVOutput.h
@@ -192,63 +192,63 @@ list(APPEND HEADERS
     util/mkid.h
     util/semaphore.h
     util/stringaide.h
-	io/mediaio.h)
+    io/mediaio.h)
 
 list(APPEND SOURCES
-	AVClock.cpp
-	AVDecoder.cpp
-	AVDemuxThread.cpp
-	AVGlobal.cpp
-	AVLog.cpp
-	AVOutput.cpp
-	AVThread.cpp
-	AudioDecoder.cpp
-	AudioFormat.cpp
-	AudioFrame.cpp
-	AudioOutput.cpp
-	AudioOutputBackend.cpp
-	AudioResample.cpp
-	AudioThread.cpp
-	ByteArray.cpp
-	Demuxer.cpp
-	Frame.cpp
-	OutputSet.cpp
-	Packet.cpp
-	PacketQueue.cpp
-	Player.cpp
-	VideoDecoder.cpp
-	VideoFormat.cpp
-	VideoFrame.cpp
-	VideoRenderer.cpp
-	VideoThread.cpp
-	decoder/audio/AudioDecoderFFmpeg.cpp
-	decoder/video/VideoDecoderFFmpeg.cpp
-	decoder/video/VideoDecoderFFmpegBase.cpp
-	filter/Filter.cpp
-	filter/LibAVFilter.cpp
-	glad/src/glad.c
-	renderer/ColorTransform.cpp
-	renderer/Geometry.cpp
-	renderer/GeometryRenderer.cpp
-	renderer/Matrix4x4.cpp
-	renderer/OpenglAide.cpp
-	renderer/OpenglVideo.cpp
-	renderer/ShaderManager.cpp
-	renderer/VideoMaterial.cpp
-	renderer/VideoShader.cpp
-	renderer/glpackage.cpp
-	resample/AudioResampleFFmpeg.cpp
-	resample/AudioResampleSoundTouch.cpp
-	subtitle/Subtitle.cpp
-	subtitle/plaintext.cpp
+    AVClock.cpp
+    AVDecoder.cpp
+    AVDemuxThread.cpp
+    AVGlobal.cpp
+    AVLog.cpp
+    AVOutput.cpp
+    AVThread.cpp
+    AudioDecoder.cpp
+    AudioFormat.cpp
+    AudioFrame.cpp
+    AudioOutput.cpp
+    AudioOutputBackend.cpp
+    AudioResample.cpp
+    AudioThread.cpp
+    ByteArray.cpp
+    Demuxer.cpp
+    Frame.cpp
+    OutputSet.cpp
+    Packet.cpp
+    PacketQueue.cpp
+    Player.cpp
+    VideoDecoder.cpp
+    VideoFormat.cpp
+    VideoFrame.cpp
+    VideoRenderer.cpp
+    VideoThread.cpp
+    decoder/audio/AudioDecoderFFmpeg.cpp
+    decoder/video/VideoDecoderFFmpeg.cpp
+    decoder/video/VideoDecoderFFmpegBase.cpp
+    filter/Filter.cpp
+    filter/LibAVFilter.cpp
+    glad/src/glad.c
+    renderer/ColorTransform.cpp
+    renderer/Geometry.cpp
+    renderer/GeometryRenderer.cpp
+    renderer/Matrix4x4.cpp
+    renderer/OpenglAide.cpp
+    renderer/OpenglVideo.cpp
+    renderer/ShaderManager.cpp
+    renderer/VideoMaterial.cpp
+    renderer/VideoShader.cpp
+    renderer/glpackage.cpp
+    resample/AudioResampleFFmpeg.cpp
+    resample/AudioResampleSoundTouch.cpp
+    subtitle/Subtitle.cpp
+    subtitle/plaintext.cpp
     subtitle/SubtitleFrame.cpp
-	subtitle/subtitledecoder.cpp
-	subtitle/subtitledecoderffmpeg.cpp
-	util/CThread.cpp
-	util/logsink.cpp
+    subtitle/subtitledecoder.cpp
+    subtitle/subtitledecoderffmpeg.cpp
+    util/CThread.cpp
+    util/logsink.cpp
     util/semaphore.cpp
-	io/mediaio.cpp)
-	
+    io/mediaio.cpp)
+
 #if (EXISTS ${FREETYPE_DIR})
 #   list(APPEND EXTRA_DEFS -DSMI_HAVE_FREETYPE=1)
 #	list(APPEND EXTRA_DEFS -DFTGL_LIBRARY_STATIC)
@@ -258,21 +258,23 @@ list(APPEND SOURCES
 #endif()
 if (EXISTS ${LIBASS_DIR})
     list(APPEND EXTRA_DEFS -DSMI_HAVE_LIBASS=1)
-	list(APPEND EXTRA_INCLUDE ${LIBASS_DIR}/include)
-	link_directories(${LIBASS_DIR}/lib)
+    list(APPEND EXTRA_INCLUDE ${LIBASS_DIR}/include)
+    link_directories(${LIBASS_DIR}/lib)
 endif()
 if (EXISTS ${LIBDVDREAD_DIR})
-	if (EXISTS ${LIBDVDNAV_DIR})
-		list(APPEND EXTRA_DEFS -DSMI_HAVE_DVD=1)
-		list(APPEND SOURCES io/dvdio.cpp)
-		list(APPEND EXTRA_INCLUDE ${LIBDVDREAD_DIR}/include)
-		list(APPEND EXTRA_INCLUDE ${LIBDVDNAV_DIR}/include)
-		link_directories(${LIBDVDREAD_DIR}/lib)
-		link_directories(${LIBDVDNAV_DIR}/lib)
-	endif()
+    if (EXISTS ${LIBDVDNAV_DIR})
+        list(APPEND EXTRA_DEFS -DSMI_HAVE_DVD=1)
+        list(APPEND SOURCES io/dvdio.cpp)
+        list(APPEND EXTRA_INCLUDE ${LIBDVDREAD_DIR}/include)
+        list(APPEND EXTRA_INCLUDE ${LIBDVDNAV_DIR}/include)
+        link_directories(${LIBDVDREAD_DIR}/lib)
+        link_directories(${LIBDVDNAV_DIR}/lib)
+    endif()
 endif()
-# Include path
+# soundtouch
+#list(APPEND EXTRA_INCLUDE ${SOUNDTOUCH_DIR})
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
+# Include path
 list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})
 
@@ -287,21 +289,24 @@ target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
 #find_library(LIB_AVFORMAT avformat ${FFMPEG_LIB})
 list(REMOVE_DUPLICATES EXTRA_LIBS)
 target_link_libraries(${MODULE} 
-	LINK_PRIVATE ${EXTRA_LIBS} 
-	LINK_PRIVATE soundtouch_static)
+    LINK_PRIVATE ${EXTRA_LIBS}
+    LINK_PRIVATE soundtouch_static)
 if (EXISTS ${LIBASS_DIR})
-	target_link_libraries(${MODULE} 
-		LINK_PRIVATE ass)
+    target_link_libraries(${MODULE}
+        LINK_PRIVATE ass)
 endif()
 if (EXISTS ${LIBDVDREAD_DIR})
-	if (EXISTS ${LIBDVDNAV_DIR})
-	target_link_libraries(${MODULE} 
-		LINK_PRIVATE dvdread dvdnav)
-	endif()
+    if (EXISTS ${LIBDVDNAV_DIR})
+        target_link_libraries(${MODULE}
+            LINK_PRIVATE dvdread dvdnav)
+    endif()
 endif()
- 
+
 set_target_properties(${MODULE} PROPERTIES
-        VERSION 1.0
-        SOVERSION 1.0
-        OUTPUT_NAME smi
-        COMPILE_FLAGS "/wd4819 /wd4996 /wd4018")
+    VERSION 1.0
+    SOVERSION 1.0
+    OUTPUT_NAME smi)
+if(MSVC)
+set_target_properties(${MODULE} PROPERTIES
+    COMPILE_FLAGS "/wd4819 /wd4996 /wd4018")
+endif()

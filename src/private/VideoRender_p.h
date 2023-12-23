@@ -7,7 +7,7 @@
 #include "sdk/filter/filter.h"
 #include "subtitle.h"
 #include "subtitle/subtitleframe.h"
-#include <cmath>
+#include "innermath.h"
 
 NAMESPACE_BEGIN
 

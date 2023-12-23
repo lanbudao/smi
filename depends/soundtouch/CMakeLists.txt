@@ -7,8 +7,9 @@ set(MODULE soundtouch)
 #    set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 #    message(STATUS "optional:-std=c++11")
 #endif(CMAKE_COMPILER_IS_GNUCXX)
-
+if(MSVC)
 list(APPEND EXTRA_DEFS -D__STDC_CONSTANT_MACROS -Wno-dev)
+endif()
 
 # Load all source file without heareders
 # aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} SOURCES)

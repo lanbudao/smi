@@ -6,6 +6,7 @@
 #include "sdk/AVLog.h"
 #include "CThread.h"
 #include "util/semaphore.h"
+#include "innermath.h"
 
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
@@ -452,13 +453,13 @@ float AudioOutputDirectSound::volume() const
 {
     LONG vol = 0;
     DX_ENSURE(stream_buf->GetVolume(&vol), 1.0);
-    return FORCE_FLOAT(pow(10.0, double(vol - DSBVOLUME_MIN) / 5000.0) / 100.0);
+    return FORCE_FLOAT(std::pow(10.0, double(vol - DSBVOLUME_MIN) / 5000.0) / 100.0);
 }
 
 bool AudioOutputDirectSound::setVolume(float value)
 {
     // dsound supports [0, 1]
-    const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
+    const LONG vol = value <= 0 ? DSBVOLUME_MIN : LONG(std::log10(value*100.0) * 5000.0) + DSBVOLUME_MIN;
     // +DSBVOLUME_MIN == -100dB
     DX_ENSURE(stream_buf->SetVolume(vol), false);
     return true;

@@ -30,7 +30,7 @@ public:
 	void frustum(float left, float right, float bottom, float top, float nearPlane, float farPlane);
 	void perspective(float verticalAngle, float aspectRatio, float nearPlane, float farPlane);
 
-	Matrix4x4 Matrix4x4::orthonormalInverse() const;
+    Matrix4x4 orthonormalInverse() const;
 
 	friend Matrix4x4 operator*(const Matrix4x4& m1, const Matrix4x4& m2);
 

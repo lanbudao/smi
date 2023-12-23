@@ -41,7 +41,7 @@ static const Matrix4x4 kGBR2RGB = Matrix4x4(0, 0, 1, 0,
                                             0, 1, 0, 0,
                                             0, 0, 0, 1);
 
-static const Matrix4x4 yuv2rgb_bt601 =
+const Matrix4x4 yuv2rgb_bt601 =
         Matrix4x4(
             1.0f,  0.000f,  1.402f, 0.0f,
             1.0f, -0.344f, -0.714f, 0.0f,
@@ -54,7 +54,7 @@ static const Matrix4x4 yuv2rgb_bt601 =
             0.0f, 0.0f, 1.0f, -0.5f,
             0.0f, 0.0f, 0.0f, 1.0f)
         ;
-static const Matrix4x4 yuv2rgb_bt709 =
+const Matrix4x4 yuv2rgb_bt709 =
         Matrix4x4(
             1.0f,  0.000f,  1.5701f, 0.0f,
             1.0f, -0.187f, -0.4664f, 0.0f,

@@ -1,6 +1,6 @@
 #include "Geometry.h"
-
-#include <cmath>
+#include "innermath.h"
+#include <cstring>
 
 NAMESPACE_BEGIN
 

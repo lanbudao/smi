@@ -1,5 +1,5 @@
 # Check sdl modules
 if (EXISTS ${SDL_DIR})
-    message("BUILD_EXAMPLE_SDL")
+    message(STATUS "build example sdl2player")
     add_subdirectory(sdl2)
 endif()

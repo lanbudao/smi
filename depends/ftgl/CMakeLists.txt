@@ -110,10 +110,10 @@ list(APPEND HEADERS
 	
 # include path
 list(APPEND INCLUDE_DIR .
-        FTFont
-		FTGL
-		FTGlyph
-		FTLayout)
+    FTFont
+    FTGL
+    FTGlyph
+    FTLayout)
 list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})		
 include_directories(${INCLUDE_DIR})
 		

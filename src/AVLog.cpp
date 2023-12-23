@@ -3,6 +3,7 @@
 #include <cstdarg>
 #include <thread>
 #include <vector>
+#include <string.h>
 #ifdef __linux
 #include <sys/time.h>
 #include <sys/syscall.h> // gettid().

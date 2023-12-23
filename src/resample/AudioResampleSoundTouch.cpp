@@ -6,8 +6,9 @@
 #include "innermath.h"
 
 //#define SOUNDTOUCH_FLOAT_SAMPLES 1
-#define SOUNDTOUCH_INTEGER_SAMPLES 1
+//#define SOUNDTOUCH_INTEGER_SAMPLES 1
 #include "SoundTouch.h"
+using namespace soundtouch;
 
 extern "C" {
 #include "libswresample/swresample.h"

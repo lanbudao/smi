@@ -5,6 +5,8 @@
 #include "Size.h"
 #include "sdk/mediainfo.h"
 #include "VideoFrame.h"
+#include <mutex>
+#include <condition_variable>
 #include <shared_mutex>
 
 NAMESPACE_BEGIN

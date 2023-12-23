@@ -1,4 +1,5 @@
 #include "plaintext.h"
+#include <cstring>
 
 namespace PlainText {
 

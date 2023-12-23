@@ -72,6 +72,7 @@ public:
     AVRational start_pts_tb;
     int64_t next_pts;
     AVRational next_pts_tb;
+    StringList hardware_supports;
 };
 
 class VideoDecoderPrivate: public AVDecoderPrivate
