@@ -329,6 +329,9 @@ void AVDemuxThread::run()
 			continue;
 		}
         ret = demuxer->readFrame();
+        if (ret == 999) {
+            continue;
+        }
         if (ret < 0) {
             if (ret == AVERROR_EOF && !d->eof) {
                 if (abuffer) {

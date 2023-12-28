@@ -1,4 +1,5 @@
 #include "VideoDecoderFFmpegBase.h"
+#include "private/VideoDecoderFFmpegBase_p.h"
 #include "AVDecoder_p.h"
 #include "AVLog.h"
 #include "inner.h"

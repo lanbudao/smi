@@ -1,6 +1,6 @@
 #include "subtitledecoder.h"
 #include "AVDecoder_p.h"
-#include "util/mkid.h"
+#include "utils/mkid.h"
 
 NAMESPACE_BEGIN
 

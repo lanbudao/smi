@@ -3,9 +3,9 @@
 #include "AudioOutputBackend_p.h"
 #include "mkid.h"
 #include "Factory.h"
-#include "sdk/AVLog.h"
+#include "AVLog.h"
 #include "CThread.h"
-#include "util/semaphore.h"
+#include "utils/semaphore.h"
 #include "innermath.h"
 
 #define DIRECTSOUND_VERSION 0x0600

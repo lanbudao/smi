@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <iostream>
 #include "sdk/player.h"
-#include "sdk/AVLog.h"
 #include "sdk/filter/LibAVFilter.h"
 #include "sdk/subtitle.h"
 #include "SDL.h"
@@ -13,7 +12,7 @@ const Uint32 update_event = SDL_USEREVENT + 10;
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
-        AVDebug("Use 'sdl2play.exe file-name'\n");
+        printf("Use 'sdl2play.exe file-name'\n");
         system("pause");
         return 0;
     }
@@ -35,7 +34,7 @@ int main(int argc, char *argv[])
     //SMI::setLogOut(true);
     //SMI::setLogFile("E:/sdl2play-log");
     char* fileName = argv[1];
-    AVDebug("The name of file to play: %s\n", fileName);
+    printf("The name of file to play: %s\n", fileName);
 
     Player *player = new Player();
     player->setMedia(fileName);
@@ -82,14 +81,18 @@ int main(int argc, char *argv[])
     //player->addExternalSubtitle("E:/sub.srt");
 
     /*Set window icon*/
-    SDL_Surface *icon = SDL_LoadBMP("app.bmp");
+    char *path = SDL_GetBasePath();
+    const char *name = "/app.bmp";
+    int len = strlen(path) + strlen(name) + 1;
+    strcat_s(path, len, name);
+    SDL_Surface *icon = SDL_LoadBMP(path);
     if (icon) {
         SDL_SetColorKey(icon, SDL_TRUE, SDL_MapRGB(icon->format, 255, 0, 255));
         SDL_SetWindowIcon(window, icon);
         SDL_FreeSurface(icon);
     }
     else {
-        AVError("Failed to load app icon: %s\n", SDL_GetError());
+        printf("Failed to load app icon: %s\n", SDL_GetError());
     }
     SDL_Event event;
     while (1) {
@@ -138,7 +141,7 @@ int main(int argc, char *argv[])
                 hh = ns / 3600;
                 mm = (ns % 3600) / 60;
                 ss = (ns % 60);
-                AVDebug("Seek to %2.0f%% (%2d:%02d:%02d) of total duration (%2d:%02d:%02d)\n", frac * 100,
+                printf("Seek to %2.0f%% (%2d:%02d:%02d) of total duration (%2d:%02d:%02d)\n", frac * 100,
                     hh, mm, ss, thh, tmm, tss);
                 ts = frac * player->duration();
                 player->seek(ts);
@@ -159,6 +162,6 @@ int main(int argc, char *argv[])
     delete vfilter;
     SDL_GL_DeleteContext(context);
 	SDL_DestroyWindow(window);
-    AVDebug("player uninitialize\n");
+    printf("player uninitialize\n");
     return 0;
 }

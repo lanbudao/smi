@@ -1,14 +1,14 @@
 #include "AudioThread.h"
 #include "AVThread_p.h"
 #include "AudioFrame.h"
-#include "AudioDecoder.h"
-#include "AudioOutput.h"
+#include "decoder/audio/AudioDecoder.h"
+#include "output/audio/AudioOutput.h"
 #include "OutputSet.h"
 #include "AVLog.h"
 #include "AVClock.h"
 #include "innermath.h"
 #include "framequeue.h"
-#include "AudioResample.h"
+#include "resample/AudioResample.h"
 extern "C" {
 #include "libavutil/samplefmt.h"
 }

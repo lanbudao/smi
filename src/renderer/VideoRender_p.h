@@ -4,7 +4,7 @@
 #include "VideoRenderer.h"
 #include "AVOutput_p.h"
 #include "renderer/OpenglVideo.h"
-#include "sdk/filter/filter.h"
+#include "sdk/filter/Filter.h"
 #include "subtitle.h"
 #include "subtitle/subtitleframe.h"
 #include "innermath.h"

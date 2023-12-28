@@ -1,7 +1,7 @@
 #ifndef VIDEODECODER_H
 #define VIDEODECODER_H
 
-#include "AVDecoder.h"
+#include "../AVDecoder.h"
 #include "VideoFrame.h"
 #include "Packet.h"
 #include <vector>

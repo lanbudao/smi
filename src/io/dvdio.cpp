@@ -1,6 +1,6 @@
 #include "mediaio.h"
 #include "private/mediaio_p.h"
-#include "AVLog.h"
+#include "utils/AVLog.h"
 #include "mkid.h"
 #include "dvdio.h"
 #include "dvdio_p.h"

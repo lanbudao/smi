@@ -2,7 +2,7 @@
 #include "AudioFrame.h"
 #include "VideoFrame.h"
 #include "inner.h"
-#include "sdk/AVLog.h"
+#include "AVLog.h"
 #include "Filter_p.h"
 extern "C" {
 #include "libavcodec/avcodec.h"

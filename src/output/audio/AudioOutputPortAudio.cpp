@@ -1,7 +1,7 @@
 #include "AudioOutputBackend.h"
 #include "AudioOutputBackend_p.h"
 #include "portaudio.h"
-#include "AVLog.h"
+#include "utils/AVLog.h"
 #include "AudioFormat.h"
 #include "Factory.h"
 #include "mkid.h"

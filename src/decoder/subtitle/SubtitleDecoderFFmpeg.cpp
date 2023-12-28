@@ -2,7 +2,7 @@
 #include "Factory.h"
 #include "AVDecoder_p.h"
 #include "sdk/DPTR.h"
-#include "AVLog.h"
+#include "util/AVLog.h"
 #include "mkid.h"
 
 NAMESPACE_BEGIN

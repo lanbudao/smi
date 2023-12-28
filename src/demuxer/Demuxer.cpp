@@ -354,6 +354,7 @@ int Demuxer::load()
     d->interrupt_handler->end();
     if (ret < 0) {
         avformat_close_input(&d->format_ctx);
+        AVDebug("avformat_open_input error: %s", averror2str(ret));
         return AVERROR(ENFILE);
     }
     if (d->genpts)

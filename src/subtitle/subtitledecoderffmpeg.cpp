@@ -1,10 +1,10 @@
 #include "SubtitleDecoder.h"
-#include "Demuxer.h"
-#include "sdk/AVLog.h"
-#include "util/stringaide.h"
+#include "demuxer/Demuxer.h"
+#include "AVLog.h"
+#include "utils/stringaide.h"
 #include "inner.h"
 #include "plaintext.h"
-#include "private/AVDecoder_p.h"
+#include "AVDecoder_p.h"
 #include "subtitle/subtitleframe.h"
 
 extern "C" {

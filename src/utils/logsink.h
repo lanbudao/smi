@@ -3,7 +3,7 @@
 
 #include "sdk/global.h"
 #include "sdk/DPTR.h"
-#include "util/Singleton.h"
+#include "utils/Singleton.h"
 
 #include <stdint.h>
 

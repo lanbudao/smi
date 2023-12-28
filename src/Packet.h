@@ -3,7 +3,7 @@
 
 #include "sdk/global.h"
 #include "sdk/DPTR.h"
-#include "ByteArray.h"
+#include "utils/ByteArray.h"
 
 struct AVPacket;
 

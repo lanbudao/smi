@@ -2,7 +2,7 @@
 #ifdef SMI_HAVE_FREETYPE
 #include "../../depends/ftgl/FTGL/ftgl.h"
 #endif
-#include "sdk/AVLog.h"
+#include "AVLog.h"
 #include "glad/glad.h"
 #include "glpackage.h"
 

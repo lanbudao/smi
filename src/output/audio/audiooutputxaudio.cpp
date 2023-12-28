@@ -4,11 +4,11 @@
 
 #include "AudioOutputBackend.h"
 #include "AudioOutputBackend_p.h"
-#include "AVLog.h"
+#include "utils/AVLog.h"
 #include "AudioFormat.h"
 #include "Factory.h"
 #include "mkid.h"
-#include "util/semaphore.h"
+#include "utils/semaphore.h"
 #include "xaudio2_compat.h"
 
 #define _WIN32_DCOM

@@ -1,6 +1,6 @@
 #include "VideoThread.h"
 #include "AVThread_p.h"
-#include "VideoDecoder.h"
+#include "decoder/video/VideoDecoder.h"
 #include "AVLog.h"
 #include "OutputSet.h"
 #include "innermath.h"

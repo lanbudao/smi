@@ -1,6 +1,6 @@
 #include "AudioFrame.h"
 #include "Frame_p.h"
-#include "AudioResample.h"
+#include "resample/AudioResample.h"
 #include "AVLog.h"
 
 NAMESPACE_BEGIN

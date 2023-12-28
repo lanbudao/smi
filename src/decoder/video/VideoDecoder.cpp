@@ -1,5 +1,5 @@
 #include "VideoDecoder.h"
-#include "AVDecoder_p.h"
+#include "private/VideoDecoder_p.h"
 #include "Factory.h"
 #include "mkid.h"
 

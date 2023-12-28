@@ -24,6 +24,7 @@ typedef struct OpenglVersion {
 		s += std::to_string(major);
 		s += std::to_string(minor);
 		s += std::to_string(patch);
+        return s;
 	}
 } OpenglVersion;
 

@@ -1,8 +1,8 @@
 #ifndef RECTF_H
 #define RECTF_H
 
-#include "util/Size.h"
-#include "util/innermath.h"
+#include "utils/Size.h"
+#include "utils/innermath.h"
 
 NAMESPACE_BEGIN
 

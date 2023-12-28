@@ -5,7 +5,7 @@
 #include "sdk/DPTR.h"
 #include "AVLog.h"
 #include "mkid.h"
-#include "util/innermath.h"
+#include "utils/innermath.h"
 
 NAMESPACE_BEGIN
 

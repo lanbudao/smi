@@ -15,7 +15,7 @@ typedef pid_t thread_id_t;
 typedef unsigned int thread_id_t; // MSVC
 #endif
 
-#include "util/logsink.h"
+#include "utils/logsink.h"
 
 NAMESPACE_BEGIN
 

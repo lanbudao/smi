@@ -38,7 +38,7 @@
 ****************************************************************************/
 #include "Matrix4x4.h"
 #include "sdk/global.h"
-#include "util/innermath.h"
+#include "utils/innermath.h"
 
 #include <limits>
 #include <string.h>
