@@ -1,6 +1,3 @@
-include(../../3rdparty.cmake)
-
-message(STATUS ${COMPILE_DEFINITIONS})
 try_compile(
     HAVE_AVCODEC
     ${CMAKE_CURRENT_BINARY_DIR}/config.tests.temp

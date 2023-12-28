@@ -1,18 +1,18 @@
 try_compile(
-    HAVE_AVFILTER
+    HAVE_D3D11VA
     ${CMAKE_CURRENT_BINARY_DIR}/config.tests.temp
     SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/avfilter_test.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/d3d11va_test.cpp
     CMAKE_FLAGS
         "-DINCLUDE_DIRECTORIES=${FFMPEG_DIR}/include"
         "-DLINK_DIRECTORIES=${FFMPEG_DIR}/lib"
     COMPILE_DEFINITIONS
         -D__STDC_CONSTANT_MACROS
     LINK_LIBRARIES
-        avfilter
+        avcodec
     )
-if(NOT HAVE_AVFILTER)
-    message(FATAL_ERROR "avfilter library not found, it is needed.")
+if(NOT HAVE_D3D11VA)
+    message(STATUS "d3d11va not found.")
 else()
-    message(STATUS "avfilter library found")
+    message(STATUS "d3d11va found")
 endif()

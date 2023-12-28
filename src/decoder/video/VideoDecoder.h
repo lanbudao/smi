@@ -64,6 +64,7 @@ extern VideoDecoderId VideoDecoderId_FFmpeg;
 extern VideoDecoderId VideoDecoderId_MMAL;
 extern VideoDecoderId VideoDecoderId_QSV;
 extern VideoDecoderId VideoDecoderId_CrystalHD;
+extern VideoDecoderId VideoDecoderId_DXVA;
 
 NAMESPACE_END
 #endif //VIDEODECODER_H

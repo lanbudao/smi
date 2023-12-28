@@ -11,6 +11,7 @@ VideoDecoderId VideoDecoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e
 VideoDecoderId VideoDecoderId_MMAL = mkid::id32base36_6<'F', 'F', 'M', 'M', 'A', 'L'>::value;
 VideoDecoderId VideoDecoderId_QSV = mkid::id32base36_5<'F', 'F', 'Q', 'S', 'V'>::value;
 VideoDecoderId VideoDecoderId_CrystalHD = mkid::id32base36_5<'F', 'F', 'C', 'H', 'D'>::value;
+VideoDecoderId VideoDecoderId_DXVA = mkid::id32base36_4<'D', 'X', 'V', 'A'>::value;
 
 static void VideoDecoder_RegisterAll()
 {

@@ -1,5 +1,3 @@
-include(../../3rdparty.cmake)
-
 try_compile(
     HAVE_SWRESAMPLE
     ${CMAKE_CURRENT_BINARY_DIR}/config.tests.temp

@@ -133,6 +133,7 @@ list(APPEND HEADERS
         decoder/audio/AudioDecoder.h
         decoder/video/VideoDecoder.h
         decoder/video/VideoDecoderFFmpegBase.h
+        decoder/video/videodecoderffmpeghw_p.h
         decoder/video/VideoDecoderFFmpegHW.h
         decoder/video/private/VideoDecoderFFmpegBase_p.h
         decoder/video/private/VideoDecoder_p.h
@@ -278,6 +279,20 @@ endif()
 # soundtouch
 #list(APPEND EXTRA_INCLUDE ${SOUNDTOUCH_DIR})
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/depends/soundtouch)
+
+# hardware decode
+if (HAVE_DXVA)
+    list(APPEND SOURCES decoder/video/VideoDecoderDXVA.cpp)
+endif()
+if (HAVE_D3D11VA)
+    list(APPEND SOURCES decoder/video/VideoDecoderD3D11VA.cpp)
+endif()
+if (HAVE_DXVA OR HAVE_D3D11VA)
+    list(APPEND HEADERS decoder/video/directx/videodecoderd3d.h)
+    list(APPEND HEADERS decoder/video/directx/videodecoderd3d_p.h)
+    list(APPEND SOURCES decoder/video/directx/videodecoderd3d.cpp)
+endif()
+
 # Include path
 list(APPEND INCLUDE_DIR ${EXTRA_INCLUDE})
 include_directories(${INCLUDE_DIR})

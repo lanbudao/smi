@@ -1,5 +1,3 @@
-include(../../3rdparty.cmake)
-
 try_compile(
     HAVE_AVFORMAT
     ${CMAKE_CURRENT_BINARY_DIR}/config.tests.temp
